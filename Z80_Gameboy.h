@@ -433,13 +433,11 @@ private:
     void LDHL_SP_E()
     {
         cycles = 3; inst_length = 2;
-        uint8_t e = read(pc+1);
+        int8_t e = read(pc+1);
         Gen_Assembly("LDHL SP,",Gen_Value(e,false,true));
-        //TODO: test
-        uint16_t res = sp + e;
-        //flags = (CarryFromBit(sp,e,res,11) << 5) + (CarryFromBit(sp,e,res,15) << 4);
+        uint16_t res = sp + (int16_t)e;
         flags = (CarryFromBit(sp,e,res,3)<<5)+(CarryFromBit(sp,e,res,7)<<4);
-        SetRegPair(Registers_Pairs::HL, res);//CAREFUL
+        SetRegPair(Registers_Pairs::HL, res);
     }
 
     void LD_iNN_SP()

@@ -13,7 +13,7 @@ int main()
     Bus gb(cpu,ppu);
     //gb.loadCartridge("ROMS/cpu_instrs/cpu_instrs.gb");
     //gb.loadCartridge("ROMS/cpu_instrs/individual/01-special.gb"); //PASSED
-    gb.loadCartridge("ROMS/cpu_instrs/individual/03-op sp,hl.gb");
+    gb.loadCartridge("ROMS/cpu_instrs/individual/03-op sp,hl.gb"); //PASSED
     //gb.loadCartridge("ROMS/cpu_instrs/individual/04-op r,imm.gb");
     //gb.loadCartridge("ROMS/cpu_instrs/individual/05-op rp.gb"); //PASSED
     //gb.loadCartridge("ROMS/cpu_instrs/individual/06-ld r,r.gb");
