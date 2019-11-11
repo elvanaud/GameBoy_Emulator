@@ -1,0 +1,8 @@
+bin/
+trace.log
+*.cbp
+*.layout
+*.depend
+obj/
+ROMS/
+
