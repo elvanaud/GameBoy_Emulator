@@ -78,7 +78,7 @@ void PPU_Gameboy::tick()
             if((stat >> 4)&1) //Trigger VBLANK Interupt
             {
                 bus->write(0xFF0F,bus->read(0xFF0F)|1);
-                bus->triggerInterupt(1);
+                //bus->triggerInterupt(1);
             }
             DrawScreen();
         }
@@ -96,7 +96,7 @@ void PPU_Gameboy::tick()
             if(dots == 0 && (stat >> 6)&1) //Trigger VBLANK Interupt
             {
                 bus->write(0xFF0F,bus->read(0xFF0F)|2);
-                bus->triggerInterupt(2);
+                //bus->triggerInterupt(2);
             }
         }
         stat = (stat&0b1'1111'1'00) + mode;
@@ -137,10 +137,18 @@ void PPU_Gameboy::DrawScreen()
     texture.update(screen);
     app.clear();
     app.draw(sprite);
-    //app.display();
+    app.display();
+
+    /*for(int i=0; i < 160;i++)
+    {
+        for(int j = 0; j < 144;j++)
+        {
+            screen[(i*160+j)*4+0]
+        }
+    }*/
 
     //Display vram:
-    sf::Image img;
+    /*sf::Image img;
     img.create(32*8,32*8);
 
     for(int tileNb = 0; tileNb < 0x1fff/16; tileNb++)//0x1800 pour tiles only (also show bgmap as tiles)
@@ -178,7 +186,7 @@ void PPU_Gameboy::DrawScreen()
     s.setTexture(t);
     s.move(160,0);
     app.draw(s);
-    app.display();
+    app.display();*/
 }
 
 uint16_t PPU_Gameboy::GetTileLine(uint8_t tileCode,uint8_t line)
@@ -199,7 +207,7 @@ uint16_t PPU_Gameboy::GetTileLine(uint8_t tileCode,uint8_t line)
             index += 0x8800;
         }
     }
-    return vram[index-0x8000]+(vram[index-0x8000+1]<<8);
+    return vram[index-0x8000]+(vram[index-0x8000+1]<<8);//TODO: USE read/write methods
 }
 
 uint16_t PPU_Gameboy::GetBGMapOffset()
@@ -216,7 +224,7 @@ void PPU_Gameboy::write(uint16_t adr, uint8_t data)
     switch(adr)
     {
     case 0xFF40:
-        lcdc = data; std::cout<<"lcdc:"<<(int)lcdc<<"|"<<((lcdc>>7)&1)<<std::endl;break;
+        lcdc = data; //std::cout<<"lcdc:"<<(int)lcdc<<"|"<<((lcdc>>7)&1)<<std::endl;break;
     case 0xFF41:
         stat = data; break;
     case 0xFF42:

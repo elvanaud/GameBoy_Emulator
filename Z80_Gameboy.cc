@@ -11,7 +11,7 @@ Z80_Gameboy::Z80_Gameboy()
     masks[3] = 0b11'000'111; //Reg middle
     masks[4] = 0b11'000'000; //Reg both
 
-    instructions[0] = {
+    oldInsts[0] = {
         {0b00'110'110,&LD_iHL_N},
         {0b00'001'010,&LD_A_iBC},
         {0b00'011'010,&LD_A_iDE},
@@ -28,7 +28,7 @@ Z80_Gameboy::Z80_Gameboy()
         {0b00'100'010,&LDI_iHL_A},
         {0b00'110'010,&LDD_iHL_A},
         {0b11'111'001,&LD_SP_HL},
-        {0b11'111'000,&LDHL_SP_E}, //carefull that one (test important)
+        {0b11'111'000,&LDHL_SP_E},
         {0b00'001'000,&LD_iNN_SP},
         {0b11'000'110,&ADD_A_N},
         {0b10'000'110,&ADD_A_iHL},
@@ -71,7 +71,7 @@ Z80_Gameboy::Z80_Gameboy()
         {0b00'010'000,&STOP} //TODO (and careful opcode)
     };
 
-    instructions[1] = {
+    oldInsts[1] = {
         {0b00'000'001,&LD_DD_NN},
         {0b11'000'101,&PUSH_QQ},
         {0b11'000'001,&POP_QQ},
@@ -80,7 +80,7 @@ Z80_Gameboy::Z80_Gameboy()
         {0b00'001'011,&DEC_SS}
     };
 
-    instructions[2] = {
+    oldInsts[2] = {
         {0b01'110'000,&LD_iHL_R},
         {0b10'000'000,&ADD_A_R},
         {0b10'001'000,&ADC_A_R},
@@ -92,7 +92,7 @@ Z80_Gameboy::Z80_Gameboy()
         {0b10'111'000,&CP_R}
     };
 
-    instructions[3] = {
+    oldInsts[3] = {
         {0b00'000'110,&LD_R_N},
         {0b01'000'110,&LD_R_iHL},
         {0b00'000'100,&INC_R},
@@ -104,9 +104,21 @@ Z80_Gameboy::Z80_Gameboy()
         {0b11'000'111,&RST_T}
     };
 
-    instructions[4] = {
+    oldInsts[4] = {
         {0b01'000'000,&LD_R_Rp}
     };
+
+    for(int i = 0; i < MASK_TYPE_NB; i++) //For type 4 could use try catch
+    {
+        for(int j = 0; j < 256; j++)
+        {
+            instructions[i][j] = std::function<void(Z80_Gameboy*)>(&not_found_inst);
+        }
+        for(auto inst : oldInsts[i])
+        {
+            instructions[i][inst.first] = std::function<void(Z80_Gameboy*)>(inst.second);
+        }
+    }
 }
 
 uint8_t Z80_Gameboy::read(uint16_t adr)
@@ -165,10 +177,20 @@ std::string Z80_Gameboy::instDump(bool withPC)
     return ss.str();
 }
 
+void Z80_Gameboy::triggerHaltMode(bool halt)
+{
+    haltMode = halt;
+}
+
 uint8_t Z80_Gameboy::tick()
 {
     if(cycles == 0)
+        cycles = Manage_Interupts();
+    if(cycles == 0)
     {
+        if(haltMode)
+            return 0;
+        //cycles = Manage_Interupts();
         oldFlags = flags;
         fromPC = pc;
         opcode = read(pc);
@@ -182,20 +204,40 @@ uint8_t Z80_Gameboy::tick()
         for(int mask_type = 0; mask_type < MASK_TYPE_NB; mask_type++)
         {
             uint8_t masked_opcode = opcode & masks[mask_type];
-            for(auto inst : instructions[mask_type])
+            //for(auto inst : instructions[mask_type])
+            /*for(int i = 0; i < instructions[mask_type].size();i++)
             {
+                auto inst = instructions[mask_type][i];
                 if(inst.first == masked_opcode)
                 {
                     inst.second(this);//executes the instruction
                     cyclesInst = cycles;
                     goto after_exec;
                 }
+            }*/
+            instFound = true;
+            //std::cout<<mask_type<<" "<<std::bitset<8>(masked_opcode)<<std::endl;
+            if(mask_type==4 && masked_opcode == 0b01'000'000)
+                LD_R_Rp();
+            else
+            //try
+            {
+                instructions[mask_type][masked_opcode](this);
+            }
+                /*catch(...)
+                {
+                    std::cout<<"error: "<<(int)mask_type<<" "<<(int)masked_opcode<<" "<<(int)opcode<<std::endl;
+                }*/
+            if(instFound)
+            {
+                cyclesInst = cycles;
+                goto after_exec;
             }
         }
         //If no instruction is found:
         pc++; //try next one //TODO: Generate error maybe ?
         priv_pc++;//Just in case
-        std::cout <<"ERREUR MONUMENTALE:NO INST FOUND:"<<opcode<<"\n---------------------------------\n";
+        std::cout <<"ERREUR MONUMENTALE:NO INST FOUND:"<<std::bitset<8>(opcode)<<"\n---------------------------------\n";
         after_exec:
 
         pc += inst_length;

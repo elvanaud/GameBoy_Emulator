@@ -27,7 +27,11 @@ private:
     uint8_t regs[8];
     static const uint8_t MASK_TYPE_NB = 5;
     uint8_t masks[MASK_TYPE_NB];
-    std::vector<std::pair<uint8_t,std::function<void(Z80_Gameboy*)>>> instructions[MASK_TYPE_NB];
+    std::vector<std::pair<uint8_t,std::function<void(Z80_Gameboy*)>>> oldInsts[MASK_TYPE_NB];
+    //std::vector<std::pair<uint8_t,std::function<void(Z80_Gameboy*)>>> instructions[MASK_TYPE_NB];
+    std::function<void(Z80_Gameboy*)> instructions[MASK_TYPE_NB][256];
+    bool instFound = true;
+    bool haltMode = false;
     uint8_t GetOpcodeMiddle()
     {
         return (opcode >> 3) & 0b00'000'111;
@@ -107,6 +111,10 @@ public:
     {
         return pc;
     }
+    uint16_t getFromPC()
+    {
+        return fromPC;
+    }
     void setPC(uint16_t adr)
     {
         pc = priv_pc = adr;
@@ -163,9 +171,9 @@ public:
     bool disassembleOver = false;
     std::string genAsm[0x8000];
     bool disassembleAdr = false;
-private:
+//private:
     std::string assembled_line;
-
+private:
     uint16_t priv_pc = 0x100;
     std::string Gen_Value(uint8_t val,bool indirect=false,bool signedval = false)
     {
@@ -183,6 +191,7 @@ private:
         if(indirect)
             return "("+ss.str()+")";
         return ss.str();
+        return "";
     }
 
     std::string Gen_Reg(uint8_t r,bool indirect=false)
@@ -211,6 +220,7 @@ private:
         if(indirect)
             return "("+ss.str()+")";
         return ss.str();
+        return "";
     }
     std::string Gen_Condition(uint8_t cc)
     {
@@ -229,8 +239,8 @@ private:
     {
         assembled_line = base + " " + p1 + ", " + p2;
     }
-public:
-    void Trigger_Interupt(uint8_t interupt)
+private:
+    /*void Trigger_Interupt(uint8_t interupt)
     {
         uint8_t if_reg = read(0xFF0F); uint8_t ie_reg = read(0xFFFF);
         if(ime == 1 && (if_reg & ie_reg)!=0)//TODO: check that (with manually causing interupts)
@@ -242,9 +252,49 @@ public:
             uint16_t adr[] = {0x40,0x48,0x50,0x58,0x60};
             pc = adr[interupt-1];//TODO:does it work with the cpu automatically incrementing it? yes
         }
+    }*/
+    void triggerHaltMode(bool halt);
+
+    uint8_t Manage_Interupts()
+    {
+        uint8_t if_reg = read(0xFF0F);
+        uint8_t ie_reg = read(0xFFFF);
+        uint8_t masked = if_reg & ie_reg;
+        for(int bit = 0; bit < 5; bit++)
+        {
+            uint8_t interupt = (masked>>bit)&1;
+            if(interupt)
+            {
+                if(haltMode)
+                {
+                    triggerHaltMode(false);
+                    //TODO: return cycles+4 (needed to get out of halt mode)
+                }
+
+                if(ime == 1)//Might be different behaviors with ime on and off
+                {
+                    ime = 0;
+                    if_reg &= ~(1<<bit);
+                    write(0xFF0F,if_reg);//Clear if flag
+                    write(sp-1,pc>>8);
+                    write(sp-2,pc&0xFF);
+                    sp = sp-2;
+                    uint16_t adr[] = {0x40,0x48,0x50,0x58,0x60};
+                    pc = adr[bit];
+                    //break;
+                    return 5; //NUMBER OF CYCLES TO HANDLE INTERUPT
+                }
+            }
+        }
+        return 0;
     }
 
 private:
+    void not_found_inst()
+    {
+        //called for unknown opcode
+        instFound = false;
+    }
     //Z80 Instructions
     void LD_R_Rp()
     {
@@ -1016,7 +1066,7 @@ private:
         Gen_Assembly("SRA",Gen_Reg(r));
         uint8_t val = GetReg(r);
         uint8_t bit = val&1;
-        val = (val >> 1) + ((val<<1)&0b1000'0000);
+        val = (val >> 1) + ((val)&0b1000'0000);
         flags = (bit << 4) + (val==0?1<<7:0);
         SetReg(r,val);
     }
@@ -1027,7 +1077,7 @@ private:
         Gen_Assembly("SRA (HL)");
         uint8_t val = read(GetRegPair(Registers_Pairs::HL));
         uint8_t bit = val&1;
-        val = (val >> 1) + ((val<<1)&0b1000'0000);
+        val = (val >> 1) + ((val)&0b1000'0000);
         flags = (bit << 4) + (val==0?1<<7:0);
         write(GetRegPair(Registers_Pairs::HL),val);
     }
@@ -1093,7 +1143,7 @@ private:
             else
                 BIT_B_R();
         }
-        else if(masked_opcode == 0b10'000'000)
+        else if(masked_opcode == 0b11'000'000)
         {
             //SET b,r OR SET b, (HL):
             uint8_t r = GetOpcodeRight();
@@ -1271,8 +1321,8 @@ private:
     void RETI()
     {
         cycles = 4; inst_length = 1;
-        Gen_Assembly("RET");
-        pc = read(sp) + (((uint16_t)read(sp+1))<<8)-inst_length;
+        Gen_Assembly("RETI");
+        pc = read(sp) + (((uint16_t)read(sp+1))<<8) - inst_length;
         sp += 2;
         ime = 1;
         //TODO:since if is hardware reset, maybe i should do it here:
@@ -1302,8 +1352,8 @@ private:
         cycles = 4; inst_length = 1;
         uint8_t t = GetOpcodeMiddle();
         Gen_Assembly("RST",Gen_Value(t));
-        write(sp-1,(pc)>>8); //write current value of pc
-        write(sp-2,(pc)&0xFF);
+        write(sp-1,(pc+inst_length)>>8); //"write current value of pc" said in manual but wrong
+        write(sp-2,(pc+inst_length)&0xFF);
         sp=sp-2;
         uint16_t rst_adr[] = {0x00,0x08,0x10,0x18,0x20,0x28,0x30,0x38};
         pc = rst_adr[t]-inst_length;
@@ -1386,16 +1436,14 @@ private:
     {
         cycles = 1; inst_length = 1;
         Gen_Assembly("EI");
-        ime = 1;
-        //TODO: maybe, since if is hardware reset, i should do it here
-        write(0xFF0F,0);
+        ime = 1; //TODO: trigger one cycle later
     }
 
     void HALT()
     {
         cycles = 1; inst_length = 1;
         Gen_Assembly("HALT");
-        //todo
+        triggerHaltMode(true);
     }
 
     void STOP()

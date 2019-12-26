@@ -10,15 +10,19 @@
 
 class Z80_Gameboy;
 class PPU_Gameboy;
+class Timer_Gameboy;
 
 class Bus
 {
 private:
     Z80_Gameboy& cpu;
     PPU_Gameboy& ppu;
+    Timer_Gameboy& tim;
+
     uint8_t if_reg;
     uint8_t ie;
     uint8_t sb,sc;
+
     std::string msg = "";
     bool stopMode = false;
     std::string asmArray[0x8000];
@@ -27,14 +31,14 @@ private:
     bool blockMemoryWrite = false;
 
 public:
-    Bus(Z80_Gameboy& c,PPU_Gameboy& p);
+    Bus(Z80_Gameboy& c,PPU_Gameboy& p,Timer_Gameboy& t);
 
     void loadCartridge(std::string path);
 
     void write(uint16_t adr,uint8_t data);
     uint8_t read(uint16_t adr);
 
-    void triggerInterupt(uint8_t interupt);
+    //void triggerInterupt(uint8_t interupt);
 
     void triggerStopMode(bool stop);
 
