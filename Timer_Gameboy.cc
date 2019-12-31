@@ -3,11 +3,9 @@
 
 void Timer_Gameboy::write(uint16_t adr, uint8_t data)
 {
-    //std::cout<<"adr:"<<adr<<" val:"<<(int)data<<std::endl;
     if(adr == 0xFF04)
     {
         div = 0;
-        //tima++;
     }
     if(adr == 0xFF05)
     {
@@ -21,7 +19,6 @@ void Timer_Gameboy::write(uint16_t adr, uint8_t data)
     {
         tac = data;
     }
-
 }
 
 uint8_t Timer_Gameboy::read(uint16_t adr)
@@ -64,7 +61,6 @@ void Timer_Gameboy::tick()
             //todo:glitches
             tima = tma;
             bus->write(0xFF0F,bus->read(0xFF0F)|(1<<2));
-            //bus->triggerInterupt(3);
         }
     }
 

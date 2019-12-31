@@ -27,11 +27,10 @@ private:
     uint8_t regs[8];
     static const uint8_t MASK_TYPE_NB = 5;
     uint8_t masks[MASK_TYPE_NB];
-    std::vector<std::pair<uint8_t,std::function<void(Z80_Gameboy*)>>> oldInsts[MASK_TYPE_NB];
-    //std::vector<std::pair<uint8_t,std::function<void(Z80_Gameboy*)>>> instructions[MASK_TYPE_NB];
     std::function<void(Z80_Gameboy*)> instructions[MASK_TYPE_NB][256];
     bool instFound = true;
     bool haltMode = false;
+
     uint8_t GetOpcodeMiddle()
     {
         return (opcode >> 3) & 0b00'000'111;
@@ -54,7 +53,6 @@ private:
         return 0;
     }
 
-    //TODO:ABSOLUMENT TESTER CA JE SUIS PAS SUR DU TOUT
     uint8_t BorrowFromBit(uint16_t a, uint16_t b, uint16_t res, uint8_t bit)
     {
         //a-b=res
@@ -79,7 +77,6 @@ private:
 
     uint8_t SetSubFlags(uint8_t a, uint8_t b, uint8_t res)
     {
-        //TODO:verify that we test for bit 4 or 3 for flag H IMPORTANT
         return (BorrowFromBit(a,b,res,7)<<4)+
             (BorrowFromBit(a,b,res,3)<<5)+(1<<6)+(((uint8_t)(res==0))<<7);
     }
@@ -762,7 +759,7 @@ private:
         Gen_Assembly("DEC (HL)");
         uint8_t val = read(GetRegPair(Registers_Pairs::HL));
         val--;
-        flags = (flags & 0b0001'0000)+(BorrowFromBit(val+1,1,val,3)<<5)+(val==0?1<<7:0) +(1<<6); //TODO:Not sure for borrow bit (changed when comparing to other emulator)
+        flags = (flags & 0b0001'0000)+(BorrowFromBit(val+1,1,val,3)<<5)+(val==0?1<<7:0) +(1<<6);
         write(GetRegPair(Registers_Pairs::HL),val);
     }
 
@@ -1235,7 +1232,7 @@ private:
     void JR_E()
     {
         cycles = 3; inst_length = 2;
-        uint8_t e = read(pc+1)+inst_length;//TODO TEST THAT ...signed or unsigned ?
+        uint8_t e = read(pc+1)+inst_length;
         Gen_Assembly("JR",Gen_Value(e,false,true));
         pc = (pc+(int8_t)e)-inst_length;
     }
@@ -1280,7 +1277,6 @@ private:
     {
         cycles = 6; inst_length = 3;
         uint8_t cc = GetOpcodeMiddle()&3; uint16_t nn = read(pc+1)+(((uint16_t)read(pc+2))<<8);
-        //std::cout<<std::bitset<8>(opcode)<<std::endl; //TODO: MANAGE ILLEGAL OPCODES
         Gen_Assembly("CALL",Gen_Condition(cc),Gen_Address(nn));
 
         if(((cc == 0) && (flags>>7)==0) || ((cc == 1) && (flags>>7)==1)
@@ -1312,8 +1308,6 @@ private:
         pc = read(sp) + (((uint16_t)read(sp+1))<<8) - inst_length;
         sp += 2;
         ime = 1;
-        //TODO:since if is hardware reset, maybe i should do it here:
-        write(0xFF0F,0);
     }
 
     void RET_CC()

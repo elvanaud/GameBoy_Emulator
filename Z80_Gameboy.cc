@@ -11,6 +11,7 @@ Z80_Gameboy::Z80_Gameboy()
     masks[3] = 0b11'000'111; //Reg middle
     masks[4] = 0b11'000'000; //Reg both
 
+    std::vector<std::pair<uint8_t,std::function<void(Z80_Gameboy*)>>> oldInsts[MASK_TYPE_NB];
     oldInsts[0] = {
         {0b00'110'110,&LD_iHL_N},
         {0b00'001'010,&LD_A_iBC},

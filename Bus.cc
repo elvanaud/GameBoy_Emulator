@@ -13,9 +13,6 @@ Bus::Bus(Z80_Gameboy & c, PPU_Gameboy & p,Timer_Gameboy & t)
     cpu.attachBus(this);
     tim.attachBus(this);
 
-    //app.create(sf::VideoMode(640,480,32),"GameBoy Emulator");
-    //for(uint16_t i = 0; i < 0x100;i++)
-        //ram[i] = 0;
     if(SDL_Init(SDL_INIT_VIDEO) != 0)
     {
         std::cout << "BIGPROBLEM\n";
@@ -27,8 +24,8 @@ Bus::Bus(Z80_Gameboy & c, PPU_Gameboy & p,Timer_Gameboy & t)
         SDL_Quit();
         return;
     }
-    //SDL_Window *win = (SDL_Window *)st(SDL_CreateWindow("DU SAUCISSON", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_SHOWN),"window creation error");
-    ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED );//| SDL_RENDERER_PRESENTVSYNC);
+
+    ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED );
     if (ren == nullptr)
     {
         SDL_DestroyWindow(win);
@@ -105,7 +102,7 @@ void Bus::write(uint16_t adr, uint8_t data)
         if(adr >= 0xFF40 && adr <= 0xFF4B)
             ppu.write(adr,data);
         if(adr == 0xFF0F)
-            if_reg = data;//TODO:trigger
+            if_reg = data;
     }
     else if(adr >= 0xFF80 && adr <= 0xFFEF) //HRAM
     {
@@ -121,7 +118,6 @@ void Bus::write(uint16_t adr, uint8_t data)
 
 uint8_t Bus::read(uint16_t adr)
 {
-    //std::cout << "bus_read\n";
     if(adr <= 0x7FFF) //ROM
     {
 
@@ -137,10 +133,7 @@ uint8_t Bus::read(uint16_t adr)
     }
     else if(adr >= 0xC000 && adr <= 0xDFFF) //WRAM
     {
-        if(adr == 0xD800)//TODO:enlever ca (test)
-        {
-            //return 0xff;
-        }
+
     }
     else if(adr >= 0xE000 && adr <= 0xFDFF) //Mirror WRAM
     {
@@ -158,7 +151,7 @@ uint8_t Bus::read(uint16_t adr)
     {
         if(adr == 0xFF00)
         {
-            return 0x83;//TODO: changed to correct glitch on debug version (not sure it is the cause..it was)
+            return 0x83; //Careful with this value
         }
         if(adr == 0xFF01)
         {
@@ -185,11 +178,6 @@ uint8_t Bus::read(uint16_t adr)
         return ie;//Interrupts Enable Register
     return ram[adr];
 }
-
-/*void Bus::triggerInterupt(uint8_t interupt)
-{
-    cpu.Trigger_Interupt(interupt);
-}*/
 
 void Bus::triggerStopMode(bool stop)
 {
