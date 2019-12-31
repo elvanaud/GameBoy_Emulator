@@ -206,7 +206,7 @@ void Bus::disassemble()
         cpu.tick();
     for(int i = 0; i < 0x8000;i++)
     {
-        asmArray[i] = cpu.genAsm[i];//useless right now(below code directly uses cpu.genAsm)
+        //asmArray[i] = cpu.genAsm[i];//useless right now(below code directly uses cpu.genAsm)
     }
     cpu.reset();
     blockMemoryWrite = false;
@@ -245,7 +245,6 @@ void Bus::run()
     bool step = true;
     bool debug = false;
     uint8_t instcycles = 0;
-    bool watch = false;
     std::vector<uint16_t> watchAdr;
     bool breakpointEnable = false;
     uint16_t breakpoint = 0; //adr 0 never executed (at least i hope)
@@ -257,20 +256,14 @@ void Bus::run()
     int instNb = 0;
     int clkTotal=0;
     std::vector<uint8_t> dmp;
-    //sf::Clock clk;
-    //sf::Time totalElapsed = sf::seconds(0.0);
+
     long long totalCycles = 0;
-    //sf::Time maxCpuTime = sf::seconds(0.0);
-    uint16_t maxPC = 0;
-    uint8_t maxOpcode = 0;
-    std::string maxAsm = "";
+
     bool over = false;
     //testProgram();
     SDL_Event e;
-    while (!over)//app.isOpen())
+    while (!over)
     {
-        // on inspecte tous les évènements de la fenêtre qui ont été émis depuis la précédente itération
-        //if(stepping)
         while (SDL_PollEvent(&e))
         {
             if (e.type == SDL_QUIT)
@@ -279,101 +272,82 @@ void Bus::run()
             }
             if (e.type == SDL_KEYDOWN)
             {
-                over = true;
-            }
-            if (e.type == SDL_MOUSEBUTTONDOWN)
-            {
-                over = true;
+                if(e.key.keysym.sym == SDLK_s)//enable stepping
+                {
+                    stepping = true;
+                    step = true;
+                }
+                if(e.key.keysym.sym == SDLK_c) //continue
+                {
+                    stepping = false;
+                }
+                if(e.key.keysym.sym == SDLK_d) //debug
+                {
+                    debug = !debug;
+                }
+                if(e.key.keysym.sym == SDLK_w)
+                {
+                    //Watch memory
+                    std::cout << "Watch Memory address:";
+                    uint16_t user_entry;
+                    std::cin >> std::hex >> user_entry;
+                    watchAdr.push_back(user_entry);
+                    std::cout << std::hex << user_entry << ": " << (int)read(user_entry) << std::endl;
+                }
+                if(e.key.keysym.sym == SDLK_b)
+                {
+
+                    breakpointEnable = true;//Toggle breakpoint
+                    std::cout << "Toggle breakpoint:";
+                    uint16_t user_entry;
+                    std::cin >> std::hex >> user_entry;
+                    //Single breakpoint for now:
+                    if(breakpoint == user_entry)
+                    {
+                        breakpoint = 0; //disable (never used for code)
+                        stepping = false; //todo: change behavior
+                        breakpointEnable = false;
+                    }
+                    else
+                        breakpoint = user_entry;
+                }
+
+                if(e.key.keysym.sym == SDLK_m)
+                {
+                    memoryBreakPointEnable = true;//Toggle breakpoint
+                    std::cout << "Toggle memory breakpoint - adr:";
+                    uint16_t user_entry;
+                    std::cin >> std::hex >> user_entry;
+                    //Single breakpoint for now:
+                    if(memBpAdr == user_entry)
+                    {
+                        memBpAdr = 0; //disable (never used for code)
+                        //stepping = false; //todo: change behavior
+                        memoryBreakPointEnable = false;
+                    }
+                    else
+                        memBpAdr = user_entry;
+                    std::cout << "\nValue:";
+                    //std::cin.ignore();
+                    std::cin>>std::hex>>user_entry;//works on uint16_t
+                    memBpVal = user_entry;
+                }
+                if(e.key.keysym.sym == SDLK_a)
+                {
+                    //trigger asm [-10;+10]
+                    //use array 32kb: adr = index
+                    triggerAsm = !triggerAsm;
+                    //std::cout << showMemory(0x100,0x110);
+
+                    //genAsm(asmArray); //already done(in construction)
+                }
             }
         }
-        /*{
-            sf::Event event;
-            while (app.pollEvent(event))
-            {
-                // évènement "fermeture demandée" : on ferme la fenêtre
-                if (event.type == sf::Event::Closed)
-                {
-                    app.close();
-                }
-                if(event.type == sf::Event::KeyPressed)
-                {
-                    if(event.key.code == sf::Keyboard::S)//enable stepping
-                    {
-                        stepping = true;
-                        step = true;
-                    }
-                    if(event.key.code == sf::Keyboard::C) //continue
-                    {
-                        stepping = false;
-                    }
-                    if(event.key.code == sf::Keyboard::D) //debug
-                    {
-                        debug = !debug;
-                    }
-                    if(event.key.code == sf::Keyboard::W)
-                    {
-                        //Watch memory
-                        watch = true;
-                    }
-                    if(event.key.code == sf::Keyboard::B)
-                    {
-
-                        breakpointEnable = true;//Toggle breakpoint
-                        std::cout << "Toggle breakpoint:";
-                        uint16_t user_entry;
-                        std::cin >> std::hex >> user_entry;
-                        //Single breakpoint for now:
-                        if(breakpoint == user_entry)
-                        {
-                            breakpoint = 0; //disable (never used for code)
-                            stepping = false; //todo: change behavior
-                            breakpointEnable = false;
-                        }
-                        else
-                            breakpoint = user_entry;
-                    }
-
-                    if(event.key.code == sf::Keyboard::M)
-                    {
-                        memoryBreakPointEnable = true;//Toggle breakpoint
-                        std::cout << "Toggle memory breakpoint - adr:";
-                        uint16_t user_entry;
-                        std::cin >> std::hex >> user_entry;
-                        //Single breakpoint for now:
-                        if(memBpAdr == user_entry)
-                        {
-                            memBpAdr = 0; //disable (never used for code)
-                            //stepping = false; //todo: change behavior
-                            memoryBreakPointEnable = false;
-                        }
-                        else
-                            memBpAdr = user_entry;
-                        std::cout << "\nValue:";
-                        //std::cin.ignore();
-                        std::cin>>std::hex>>user_entry;//works on uint16_t
-                        memBpVal = user_entry;
-                    }
-                    if(event.key.code == sf::Keyboard::A)
-                    {
-                        //trigger asm [-10;+10]
-                        //use array 32kb: adr = index
-                        triggerAsm = !triggerAsm;
-                        //std::cout << showMemory(0x100,0x110);
-
-                        //genAsm(asmArray); //already done(in construction)
-                    }
-                }
-            }
-        }*/
 
         if(!stopMode && (!stepping||instcycles!=0||step))
         {
             if(cpt == 4)
             {
-                /*if(sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
-                {
-                    app.close();
-                }*/
                 cpt = 0;
                 if(instcycles==0)
                 {
@@ -396,20 +370,6 @@ void Bus::run()
                     stepping = true; //step = true
                 if(memoryBreakPointEnable&&instcycles==0 && read(memBpAdr)==memBpVal)
                     stepping = true;
-                /*if(instcycles==0)
-                {
-                    //dump+=csvGet(cpu.trace(true,true),"flags")+";";
-                    //dump+=csvGet(cpu.trace(true,true),"A")+";";
-                    dump+=cpu.instDump()+"|"+csvGet(cpu.trace(),"assembly")+"\n";
-                    //instNb++;
-                }*/
-                /*if(instNb == 284'436)
-                {
-                     std::cout<<"yobbb\n";
-                }*/
-
-                if(instNb == 175'154)
-                    ;//stepping=true;//app.close();//stepping=true;
                 if(debug&&instcycles==0)
                 {
                     std::cout << cpu.trace() << std::endl<<cpu.instDump()<<std::endl;
@@ -445,7 +405,7 @@ void Bus::run()
                     std::cout << "Serial Cable Char:"<<(int)sb<<" ("<<(char)sb<<")"<<std::endl;
                     sb = sc = 0;
                 }
-                //SDL_Delay(1);
+                SDL_Delay(0.01);
             }
             ppu.tick();
             tim.tick();
@@ -454,32 +414,9 @@ void Bus::run()
         }
         if(stopMode)
         {
-            std::cout<<"STOP";//app.close(); //todo: trigger on interupt from p10-...
+            std::cout<<"STOP";
+            over = true; //todo: trigger on interupt from p10-...
         }
-        if(watch)
-        {
-            std::cout << "Watch Memory address:";
-            uint16_t user_entry;
-            std::cin >> std::hex >> user_entry;
-            watchAdr.push_back(user_entry);
-            watch = false;
-            std::cout << std::hex << user_entry << ": " << (int)read(user_entry) << std::endl;
-        }
-        /*if(breakpointEnable)
-        {
-            std::cout << "Toggle breakpoint:";
-            uint16_t user_entry;
-            std::cin >> std::hex >> user_entry;
-            //Single breakpoint for now:
-            if(breakpoint == user_entry)
-            {
-                breakpoint = 0; //disable (never used for code)
-                stepping = false; //todo: change behavior
-            }
-            else
-                breakpoint = user_entry;
-            breakpointEnable = false;
-        }*/
     }
     /*sf::Time time1 = clk.getElapsedTime();
     std::cout << time1.asSeconds()<< std::endl<<maxCpuTime.asMilliseconds()

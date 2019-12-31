@@ -25,6 +25,7 @@ private:
     uint8_t lyc;
     uint8_t wy,wx;
     uint8_t stat = 0;
+    int nbframes = 0;
     //uint8_t screen[160*144*4];
     std::vector<unsigned char> screen = std::vector<unsigned char>(160*144*4,0);
     void DrawScreen();

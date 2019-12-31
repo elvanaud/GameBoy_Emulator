@@ -83,7 +83,7 @@ void PPU_Gameboy::tick()
             scanline++;
             pixelcount = 0;
         }
-        if(scanline == 144) //ENTER VBLANK
+        if(scanline == 144 && dots == 0) //ENTER VBLANK
         {
             mode = VBLANK;
             if((stat >> 4)&1) //Trigger VBLANK Interupt
@@ -99,6 +99,9 @@ void PPU_Gameboy::tick()
             scanline = 0;
             dots = 0;
             pixelcount = 0;
+            //DrawScreen();
+            //nbframes++;
+            //if(nbframes == 60) {nbframes = 0; std::cout<<"frame\n";}
         }
         stat &= 0b1'1111'0'11;//reset the lyc=ly flag
         if(scanline == lyc) //trigger it only once

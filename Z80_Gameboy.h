@@ -240,19 +240,6 @@ private:
         assembled_line = base + " " + p1 + ", " + p2;
     }
 private:
-    /*void Trigger_Interupt(uint8_t interupt)
-    {
-        uint8_t if_reg = read(0xFF0F); uint8_t ie_reg = read(0xFFFF);
-        if(ime == 1 && (if_reg & ie_reg)!=0)//TODO: check that (with manually causing interupts)
-        {
-            ime = 0;
-            write(sp-1,pc>>8);
-            write(sp-2,pc&0xFF);
-            sp = sp-2;
-            uint16_t adr[] = {0x40,0x48,0x50,0x58,0x60};
-            pc = adr[interupt-1];//TODO:does it work with the cpu automatically incrementing it? yes
-        }
-    }*/
     void triggerHaltMode(bool halt);
 
     uint8_t Manage_Interupts()

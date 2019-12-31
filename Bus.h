@@ -26,9 +26,7 @@ private:
 
     std::string msg = "";
     bool stopMode = false;
-    std::string asmArray[0x8000];
     uint8_t ram[0x10000];
-    //sf::RenderWindow app;
     SDL_Renderer *ren;
     SDL_Window *win;
     bool blockMemoryWrite = false;
@@ -41,8 +39,6 @@ public:
 
     void write(uint16_t adr,uint8_t data);
     uint8_t read(uint16_t adr);
-
-    //void triggerInterupt(uint8_t interupt);
 
     void triggerStopMode(bool stop);
 
@@ -97,11 +93,6 @@ public:
             ram[i+0x100] = testDAA[i];
         }
     }
-
-    /*sf::RenderWindow & getWindow()
-    {
-        return app;
-    }*/
 
     SDL_Renderer *getSDLRenderer()
     {
