@@ -4,7 +4,6 @@ trace.log
 *.layout
 *.depend
 obj/
-ROMS/
 *.log
 
 
