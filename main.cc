@@ -4,8 +4,11 @@
 #include "PPU_Gameboy.h"
 #include "Timer_Gameboy.h"
 
-int main()
+#include <time.h>
+
+int main(int argc, char **argv)
 {
+    srand(time(NULL));
     Z80_Gameboy cpu;
     PPU_Gameboy ppu;
     Timer_Gameboy tim;

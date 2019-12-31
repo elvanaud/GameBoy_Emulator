@@ -4,14 +4,25 @@
 #include <algorithm>
 #include <iostream>
 
+#include <SDL2/SDL.h>
+
 PPU_Gameboy::PPU_Gameboy()
 {
-    if(!texture.create(160,144))
+    /*if(!texture.create(160,144))
     {
         std::cout << "ERREUR MONUMENTALE" << std::endl;
     }
     texture.setSmooth(false);
-    sprite.setTexture(texture);
+    sprite.setTexture(texture);*/
+    //surf = SDL_CreateRGBSurfaceFrom((void*)screen, 160, 144, 32, 0,
+      //                                       0, 0, 0, 0);
+    //tex = SDL_CreateTexture(ren,SDL_PIXELFORMAT_RGBA8888,SDL_TEXTUREACCESS_STREAMING,160,144);
+}
+
+PPU_Gameboy::~PPU_Gameboy()
+{
+    SDL_FreeSurface(surf);
+    SDL_DestroyTexture(tex);
 }
 
 void PPU_Gameboy::tick()
@@ -127,17 +138,54 @@ void PPU_Gameboy::UpdateScreen(uint8_t pixelData,uint8_t y, uint8_t x, uint8_t p
     screen[(y*160+x)*4+0] = colors[colorPalette][0];
     screen[(y*160+x)*4+1] = colors[colorPalette][1];
     screen[(y*160+x)*4+2] = colors[colorPalette][2];
-    screen[(y*160+x)*4+3] = colors[colorPalette][3];
+    screen[(y*160+x)*4+3] = colors[colorPalette][4];
 }
 
 void PPU_Gameboy::DrawScreen()
 {
-    sf::RenderWindow & app = bus->getWindow();
+    //SDL_Renderer * ren = bus->getSDLRenderer();
+    SDL_SetRenderDrawColor( ren, 0, 0, 0, SDL_ALPHA_OPAQUE );
+    SDL_RenderClear(ren);
+
+
+    //SDL_Texture* tex = SDL_CreateTextureFromSurface(ren,surf);
+    /*for( unsigned int i = 0; i < 160*144; i++ )
+        {
+            const unsigned int x = rand() % 160;
+            const unsigned int y = rand() % 144;
+
+            const unsigned int offset = ( 160 * 4 * y ) + x * 4;
+            screen[ offset + 0 ] = rand() % 256;        // b
+            screen[ offset + 1 ] = rand() % 256;        // g
+            screen[ offset + 2 ] = rand() % 256;        // r
+            screen[ offset + 3 ] = SDL_ALPHA_OPAQUE;    // a
+        }*/
+    SDL_UpdateTexture(tex,NULL,&screen[0],160*4);
+/*SDL_UpdateTexture
+            (
+            tex,
+            NULL,
+            &screen[0],
+            160 * 4
+            );*/
+
+    SDL_Rect dst;
+	dst.x = 0;
+	dst.y = 0;
+	dst.w=160;
+	dst.h=144;
+	//Query the texture to get its width and height to use
+	//SDL_QueryTexture(tex, NULL, NULL, &dst.w, &dst.h);
+	SDL_RenderCopy(ren, tex, NULL, NULL);//&dst);
+
+    SDL_RenderPresent(ren);
+
+    /*sf::RenderWindow & app = bus->getWindow();
 
     texture.update(screen);
     app.clear();
     app.draw(sprite);
-    app.display();
+    app.display();*/
 
     /*for(int i=0; i < 160;i++)
     {

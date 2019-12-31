@@ -4,20 +4,46 @@
 #include "Timer_Gameboy.h"
 #include <iostream>
 #include <fstream>
-#include <SFML/Graphics.hpp>
+//#include <SFML/Graphics.hpp>
 #include <vector>
-
 
 Bus::Bus(Z80_Gameboy & c, PPU_Gameboy & p,Timer_Gameboy & t)
     :cpu(c),ppu(p),tim(t)
 {
     cpu.attachBus(this);
-    ppu.attachBus(this);
     tim.attachBus(this);
 
-    app.create(sf::VideoMode(640,480,32),"GameBoy Emulator");
+    //app.create(sf::VideoMode(640,480,32),"GameBoy Emulator");
     //for(uint16_t i = 0; i < 0x100;i++)
         //ram[i] = 0;
+    if(SDL_Init(SDL_INIT_VIDEO) != 0)
+    {
+        std::cout << "BIGPROBLEM\n";
+    }
+    win = SDL_CreateWindow("GameBoy Emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_SHOWN);
+    if (win == nullptr)
+    {
+        std::cout << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
+        SDL_Quit();
+        return;
+    }
+    //SDL_Window *win = (SDL_Window *)st(SDL_CreateWindow("DU SAUCISSON", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_SHOWN),"window creation error");
+    ren = SDL_CreateRenderer(win, -1, SDL_RENDERER_ACCELERATED );//| SDL_RENDERER_PRESENTVSYNC);
+    if (ren == nullptr)
+    {
+        SDL_DestroyWindow(win);
+        std::cout << "SDL_CreateRenderer Error: " << SDL_GetError() << std::endl;
+        SDL_Quit();
+        return;
+    }
+    ppu.attachBus(this,ren);
+}
+
+Bus::~Bus()
+{
+    SDL_DestroyRenderer(ren);
+    SDL_DestroyWindow(win);
+    SDL_Quit();
 }
 
 void Bus::loadCartridge(std::string path)
@@ -231,21 +257,36 @@ void Bus::run()
     int instNb = 0;
     int clkTotal=0;
     std::vector<uint8_t> dmp;
-    sf::Clock clk;
-    sf::Time totalElapsed = sf::seconds(0.0);
+    //sf::Clock clk;
+    //sf::Time totalElapsed = sf::seconds(0.0);
     long long totalCycles = 0;
-    sf::Time maxCpuTime = sf::seconds(0.0);
+    //sf::Time maxCpuTime = sf::seconds(0.0);
     uint16_t maxPC = 0;
     uint8_t maxOpcode = 0;
     std::string maxAsm = "";
-    bool stop = false;
+    bool over = false;
     //testProgram();
-
-    while (app.isOpen())
+    SDL_Event e;
+    while (!over)//app.isOpen())
     {
         // on inspecte tous les évènements de la fenêtre qui ont été émis depuis la précédente itération
         //if(stepping)
+        while (SDL_PollEvent(&e))
         {
+            if (e.type == SDL_QUIT)
+            {
+                over = true;
+            }
+            if (e.type == SDL_KEYDOWN)
+            {
+                over = true;
+            }
+            if (e.type == SDL_MOUSEBUTTONDOWN)
+            {
+                over = true;
+            }
+        }
+        /*{
             sf::Event event;
             while (app.pollEvent(event))
             {
@@ -323,7 +364,7 @@ void Bus::run()
                     }
                 }
             }
-        }
+        }*/
 
         if(!stopMode && (!stepping||instcycles!=0||step))
         {
@@ -400,10 +441,11 @@ void Bus::run()
                 {
                     msg+=(char) sb;
                     if(msg=="Passed" || (char)sb == 'P' || (char)sb == 'F')
-                        app.close();
+                        ;//app.close();
                     std::cout << "Serial Cable Char:"<<(int)sb<<" ("<<(char)sb<<")"<<std::endl;
                     sb = sc = 0;
                 }
+                //SDL_Delay(1);
             }
             ppu.tick();
             tim.tick();
@@ -412,7 +454,7 @@ void Bus::run()
         }
         if(stopMode)
         {
-            std::cout<<"STOP";app.close(); //todo: trigger on interupt from p10-...
+            std::cout<<"STOP";//app.close(); //todo: trigger on interupt from p10-...
         }
         if(watch)
         {
@@ -439,10 +481,10 @@ void Bus::run()
             breakpointEnable = false;
         }*/
     }
-    sf::Time time1 = clk.getElapsedTime();
+    /*sf::Time time1 = clk.getElapsedTime();
     std::cout << time1.asSeconds()<< std::endl<<maxCpuTime.asMilliseconds()
         <<std::endl<<std::showbase<<std::hex<<maxPC<<": "<<(int)maxOpcode<<std::endl<<maxAsm<<std::endl
-        <<std::dec<<totalCycles<<std::endl<<clkTotal<<std::endl;
+        <<std::dec<<totalCycles<<std::endl<<clkTotal<<std::endl;*/
     std::cout <<"Result:"<< msg << std::endl;
     //std::cout <<dump;
     /*std::ofstream of;

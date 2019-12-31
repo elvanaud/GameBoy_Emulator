@@ -6,7 +6,8 @@
 #include <iostream>
 #include <sstream>
 
-#include <SFML/Graphics.hpp>
+#include <SDL2/SDL.h>
+//#include <SFML/Graphics.hpp>
 
 class Z80_Gameboy;
 class PPU_Gameboy;
@@ -27,11 +28,14 @@ private:
     bool stopMode = false;
     std::string asmArray[0x8000];
     uint8_t ram[0x10000];
-    sf::RenderWindow app;
+    //sf::RenderWindow app;
+    SDL_Renderer *ren;
+    SDL_Window *win;
     bool blockMemoryWrite = false;
 
 public:
     Bus(Z80_Gameboy& c,PPU_Gameboy& p,Timer_Gameboy& t);
+    ~Bus();
 
     void loadCartridge(std::string path);
 
@@ -94,9 +98,14 @@ public:
         }
     }
 
-    sf::RenderWindow & getWindow()
+    /*sf::RenderWindow & getWindow()
     {
         return app;
+    }*/
+
+    SDL_Renderer *getSDLRenderer()
+    {
+        return ren;
     }
 };
 

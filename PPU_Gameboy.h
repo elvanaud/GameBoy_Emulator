@@ -2,7 +2,9 @@
 #define PPU_GAMEBOY_H
 
 #include <cstdint>
-#include <SFML/Graphics.hpp>
+//#include <SFML/Graphics.hpp>
+#include <SDL2/SDL.h>
+#include <vector>
 
 class Bus;
 
@@ -23,10 +25,14 @@ private:
     uint8_t lyc;
     uint8_t wy,wx;
     uint8_t stat = 0;
-    uint8_t screen[160*144*4];
+    //uint8_t screen[160*144*4];
+    std::vector<unsigned char> screen = std::vector<unsigned char>(160*144*4,0);
     void DrawScreen();
-    sf::Texture texture;
-    sf::Sprite sprite;
+    //sf::Texture texture;
+    //sf::Sprite sprite;
+    SDL_Surface* surf;
+    SDL_Texture* tex;
+    SDL_Renderer * ren;
 
     void generatePixel(uint8_t y, uint8_t x);
     uint16_t GetBGMapOffset();
@@ -34,10 +40,13 @@ private:
     void UpdateScreen(uint8_t pixelData,uint8_t y, uint8_t x, uint8_t palette);
 public:
     PPU_Gameboy();
+    ~PPU_Gameboy();
 
-    void attachBus(Bus * b)
+    void attachBus(Bus * b,SDL_Renderer * r)
     {
         bus = b;
+        ren = r;
+        tex = SDL_CreateTexture(ren,SDL_PIXELFORMAT_ABGR8888,SDL_TEXTUREACCESS_STREAMING,160,144);//TODO:debug format/understand it
     }
 
     void tick();
