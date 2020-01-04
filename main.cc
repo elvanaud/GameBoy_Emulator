@@ -8,7 +8,7 @@
 
 int main(int argc, char **argv)
 {
-    srand(time(NULL));
+    //srand(time(NULL));
     Z80_Gameboy cpu;
     PPU_Gameboy ppu;
     Timer_Gameboy tim;

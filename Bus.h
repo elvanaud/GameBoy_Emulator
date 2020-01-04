@@ -20,11 +20,16 @@ private:
     PPU_Gameboy& ppu;
     Timer_Gameboy& tim;
 
-    uint8_t if_reg;
-    uint8_t ie;
-    uint8_t sb,sc;
+    uint8_t if_reg = 0;
+    uint8_t ie = 0;
+    uint8_t controller_reg = 0x83;
+    enum Controller_Key {Cont_RIGHT,Cont_LEFT,Cont_UP,Cont_DOWN, Cont_A,Cont_B,Cont_SELECT,Cont_START,Cont_KEYNB};
+    enum Controller_Signal {Sig_DOWN=0,Sig_UP=1};
+    Controller_Signal controller_keys_state[Cont_KEYNB];
 
+    uint8_t sb,sc;
     std::string msg = "";
+
     bool stopMode = false;
     uint8_t ram[0x10000];
     SDL_Renderer *ren;

@@ -141,17 +141,14 @@ void PPU_Gameboy::UpdateScreen(uint8_t pixelData,uint8_t y, uint8_t x, uint8_t p
     screen[(y*160+x)*4+0] = colors[colorPalette][0];
     screen[(y*160+x)*4+1] = colors[colorPalette][1];
     screen[(y*160+x)*4+2] = colors[colorPalette][2];
-    screen[(y*160+x)*4+3] = colors[colorPalette][4];
+    screen[(y*160+x)*4+3] = colors[colorPalette][3];
 }
 
 void PPU_Gameboy::DrawScreen()
 {
-    //SDL_Renderer * ren = bus->getSDLRenderer();
     SDL_SetRenderDrawColor( ren, 0, 0, 0, SDL_ALPHA_OPAQUE );
     SDL_RenderClear(ren);
 
-
-    //SDL_Texture* tex = SDL_CreateTextureFromSurface(ren,surf);
     /*for( unsigned int i = 0; i < 160*144; i++ )
         {
             const unsigned int x = rand() % 160;
@@ -164,80 +161,10 @@ void PPU_Gameboy::DrawScreen()
             screen[ offset + 3 ] = SDL_ALPHA_OPAQUE;    // a
         }*/
     SDL_UpdateTexture(tex,NULL,&screen[0],160*4);
-/*SDL_UpdateTexture
-            (
-            tex,
-            NULL,
-            &screen[0],
-            160 * 4
-            );*/
 
-    SDL_Rect dst;
-	dst.x = 0;
-	dst.y = 0;
-	dst.w=160;
-	dst.h=144;
-	//Query the texture to get its width and height to use
-	//SDL_QueryTexture(tex, NULL, NULL, &dst.w, &dst.h);
 	SDL_RenderCopy(ren, tex, NULL, NULL);//&dst);
 
     SDL_RenderPresent(ren);
-
-    /*sf::RenderWindow & app = bus->getWindow();
-
-    texture.update(screen);
-    app.clear();
-    app.draw(sprite);
-    app.display();*/
-
-    /*for(int i=0; i < 160;i++)
-    {
-        for(int j = 0; j < 144;j++)
-        {
-            screen[(i*160+j)*4+0]
-        }
-    }*/
-
-    //Display vram:
-    /*sf::Image img;
-    img.create(32*8,32*8);
-
-    for(int tileNb = 0; tileNb < 0x1fff/16; tileNb++)//0x1800 pour tiles only (also show bgmap as tiles)
-    {
-        for(int i = 0; i < 8; i++)
-        {
-            uint8_t lower = vram[tileNb*16+2*i];
-            uint8_t upper = vram[tileNb*16+2*i+1];
-
-            for(int j = 0; j < 8; j++)
-            {
-                uint8_t dotData = (lower&1)+(upper&2);
-                lower >>=1; upper>>=1;
-                sf::Color color;
-                switch(dotData)
-                {
-                case 0:
-                    color = sf::Color(255,255,255);break;
-                case 1:
-                    color = sf::Color(255,0,0); break;
-                case 2:
-                    color = sf::Color(0,255,0); break;
-                case 3:
-                    color = sf::Color(0,0,0); break;
-                }
-                img.setPixel((tileNb%32)*8+j,(tileNb/32)*8+i,color);
-            }
-        }
-    }
-
-    sf::Texture t;
-    t.loadFromImage(img);
-    t.setSmooth(false);
-    sf::Sprite s;
-    s.setTexture(t);
-    s.move(160,0);
-    app.draw(s);
-    app.display();*/
 }
 
 uint16_t PPU_Gameboy::GetTileLine(uint8_t tileCode,uint8_t line)

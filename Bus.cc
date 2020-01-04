@@ -6,6 +6,7 @@
 #include <fstream>
 //#include <SFML/Graphics.hpp>
 #include <vector>
+#include <map>
 
 Bus::Bus(Z80_Gameboy & c, PPU_Gameboy & p,Timer_Gameboy & t)
     :cpu(c),ppu(p),tim(t)
@@ -34,6 +35,8 @@ Bus::Bus(Z80_Gameboy & c, PPU_Gameboy & p,Timer_Gameboy & t)
         return;
     }
     ppu.attachBus(this,ren);
+
+    for(int i = 0; i < Cont_KEYNB; i++) controller_keys_state[i] = Sig_UP;
 }
 
 Bus::~Bus()
@@ -86,6 +89,25 @@ void Bus::write(uint16_t adr, uint8_t data)
     }
     else if(adr >= 0xFF00 && adr <= 0xFF7F) //IO REGISTERS
     {
+        if(adr == 0xFF00)
+        {
+            uint8_t base = 0b10'00'0000;
+            uint8_t keys = 0b0000'0000;
+            int mask = 1;
+            Controller_Key starting_key = Cont_A;
+            if(((data >> 5)&1) == 0);//P15 selected: General Control Buttons
+            else if(((data >> 4)&1) == 0) //P14 selected: Cross Dir
+            {
+                starting_key = Cont_RIGHT;
+            }
+            for(int i = starting_key; i < starting_key+4; i++)
+            {
+                if(controller_keys_state[i] == Sig_UP)
+                    keys |= mask;
+                mask <<= 1;
+            }
+            controller_reg = base | (data & 0b00'11'0000) | keys;
+        }
         if(adr == 0xFF01)
         {
             sb = data;
@@ -151,7 +173,7 @@ uint8_t Bus::read(uint16_t adr)
     {
         if(adr == 0xFF00)
         {
-            return 0x83; //Careful with this value
+            return controller_reg;
         }
         if(adr == 0xFF01)
         {
@@ -241,14 +263,10 @@ void Bus::run()
     uint8_t memBpVal = 0;
     bool triggerAsm = false;
     std::string dump = "";
-    int instNb = 0;
-    int clkTotal=0;
     std::vector<uint8_t> dmp;
 
-    long long totalCycles = 0;
-
     bool over = false;
-    //testProgram();
+
     SDL_Event e;
     while (!over)
     {
@@ -258,8 +276,25 @@ void Bus::run()
             {
                 over = true;
             }
-            if (e.type == SDL_KEYDOWN)
+            else if(e.type == SDL_KEYDOWN || e.type == SDL_KEYUP)
             {
+                //Controls:
+                //std::vector<SDL_Keycode> controller_keys = {SDLK_DOWN,SDLK_UP,SDLK_RIGHT,SDLK_LEFT,SDLK_SPACE,SDLK_RETURN,SDLK_a,SDLK_z,SDLK_a};
+                std::map<SDL_EventType,Controller_Signal> sdl_signal; sdl_signal[SDL_KEYDOWN] = Sig_DOWN; sdl_signal[SDL_KEYUP] = Sig_UP;
+                std::map<SDL_Keycode,Controller_Key> controller_keys = {{SDLK_DOWN,Cont_DOWN},{SDLK_UP,Cont_UP},{SDLK_RIGHT,Cont_RIGHT},
+                    {SDLK_LEFT,Cont_LEFT},{SDLK_SPACE,Cont_SELECT},{SDLK_RETURN,Cont_START},{SDLK_a,Cont_A},{SDLK_z,Cont_B}};
+                if(controller_keys.count(e.key.keysym.sym) == 1)
+                {
+                    Controller_Signal signal = sdl_signal[(SDL_EventType)e.type];
+                    if(controller_keys_state[controller_keys[e.key.keysym.sym]] == Sig_UP && signal == Sig_DOWN)
+                        write(0xFF0F,read(0xFF0F)|16);
+                    controller_keys_state[controller_keys[e.key.keysym.sym]] = signal;
+                }
+            }
+            //Debug events
+            if (e.type == SDL_KEYDOWN)// || e.type == SDL_KEYUP)
+            {
+                //if(e.key.keysym.sym == SDLK_DOWN)
                 if(e.key.keysym.sym == SDLK_s)//enable stepping
                 {
                     stepping = true;
@@ -320,7 +355,7 @@ void Bus::run()
                     std::cin>>std::hex>>user_entry;//works on uint16_t
                     memBpVal = user_entry;
                 }
-                if(e.key.keysym.sym == SDLK_a)
+                if(debug && e.key.keysym.sym == SDLK_a)
                 {
                     //trigger asm [-10;+10]
                     //use array 32kb: adr = index
@@ -337,6 +372,7 @@ void Bus::run()
             if(cpt == 4)
             {
                 cpt = 0;
+
                 if(instcycles==0)
                 {
                     /*dump+=csvGet(cpu.trace(),"flags")+";";
@@ -346,13 +382,11 @@ void Bus::run()
                     dump+=csvGet(cpu.trace(true,true,true),"BC")+";";
                     dump+=csvGet(cpu.trace(true,true,true),"SP")+";";*/
                     //dump+=cpu.trace(false);
-
                     cpu.binaryDump(dmp);
-                    instNb++;
                 }
+
                 instcycles = cpu.tick();
 
-                totalCycles++;
                 step = false;
                 if(breakpointEnable&&instcycles==0&&cpu.getPC() == breakpoint)
                     stepping = true; //step = true
@@ -362,7 +396,6 @@ void Bus::run()
                 {
                     std::cout << cpu.trace() << std::endl<<cpu.instDump()<<std::endl;
                     std::cout << "--------------------------------------" << std::endl;
-                    std::cout<<std::dec<<instNb<<std::endl;
                     for(a : watchAdr)
                     {
                         std::cout << std::hex << std::showbase << a << ": " << (int)read(a) << std::endl;
@@ -393,12 +426,12 @@ void Bus::run()
                     std::cout << "Serial Cable Char:"<<(int)sb<<" ("<<(char)sb<<")"<<std::endl;
                     sb = sc = 0;
                 }
-                SDL_Delay(0.01);
+                SDL_Delay(0.001);
+
             }
             ppu.tick();
             tim.tick();
             cpt++;
-            clkTotal++;
         }
         if(stopMode)
         {
@@ -406,10 +439,7 @@ void Bus::run()
             over = true; //todo: trigger on interupt from p10-...
         }
     }
-    /*sf::Time time1 = clk.getElapsedTime();
-    std::cout << time1.asSeconds()<< std::endl<<maxCpuTime.asMilliseconds()
-        <<std::endl<<std::showbase<<std::hex<<maxPC<<": "<<(int)maxOpcode<<std::endl<<maxAsm<<std::endl
-        <<std::dec<<totalCycles<<std::endl<<clkTotal<<std::endl;*/
+
     std::cout <<"Result:"<< msg << std::endl;
     //std::cout <<dump;
     /*std::ofstream of;
