@@ -287,7 +287,10 @@ void Bus::run()
                 {
                     Controller_Signal signal = sdl_signal[(SDL_EventType)e.type];
                     if(controller_keys_state[controller_keys[e.key.keysym.sym]] == Sig_UP && signal == Sig_DOWN)
+                    {
                         write(0xFF0F,read(0xFF0F)|16);
+                        stopMode = false;
+                    }
                     controller_keys_state[controller_keys[e.key.keysym.sym]] = signal;
                 }
             }
@@ -436,7 +439,7 @@ void Bus::run()
         if(stopMode)
         {
             std::cout<<"STOP";
-            over = true; //todo: trigger on interupt from p10-...
+            //over = true; //todo: trigger on interupt from p10-...
         }
     }
 

@@ -6,18 +6,7 @@
 
 #include <SDL2/SDL.h>
 
-PPU_Gameboy::PPU_Gameboy()
-{
-    /*if(!texture.create(160,144))
-    {
-        std::cout << "ERREUR MONUMENTALE" << std::endl;
-    }
-    texture.setSmooth(false);
-    sprite.setTexture(texture);*/
-    //surf = SDL_CreateRGBSurfaceFrom((void*)screen, 160, 144, 32, 0,
-      //                                       0, 0, 0, 0);
-    //tex = SDL_CreateTexture(ren,SDL_PIXELFORMAT_RGBA8888,SDL_TEXTUREACCESS_STREAMING,160,144);
-}
+PPU_Gameboy::PPU_Gameboy(){}
 
 PPU_Gameboy::~PPU_Gameboy()
 {
@@ -28,7 +17,6 @@ PPU_Gameboy::~PPU_Gameboy()
 void PPU_Gameboy::tick()
 {
     //test();
-    scx = scy = 0;//TODO
     if(((lcdc>>7)&1)==0)
     {
         stat = 0;
@@ -44,6 +32,11 @@ void PPU_Gameboy::tick()
             if(mode == 2 || dots == 0)
             {
                 mode = 2;
+                if(mode == 2 && dots == 0)
+                {
+                    if((stat >> 5)&1)
+                        bus->write(0xFF0F,bus->read(0xFF0F)|2);
+                }
                 //Probably implement OAM Bug or something
                 //For now, nothing happens
                 if(dots == 79)
@@ -55,7 +48,7 @@ void PPU_Gameboy::tick()
             {
                 if(cycles == 0) //Mode 3 n'est pas régulier, ce if sert à temporiser
                 {
-                    if(dots == 80) //pixelcount == 0) //Add sprites, bg scrolling and window as causes of cycles
+                    if(dots == 80) //pixelcount == 0) //TODO: Add sprites, bg scrolling and window as causes of cycles
                     {
                         cycles = 8; //Initial 8 pixels (just before the left edge of the screen)
                     }
@@ -68,16 +61,16 @@ void PPU_Gameboy::tick()
                 }
                 cycles = std::max(0,cycles-1);
             }
-            if(pixelcount == 159)
+            if(pixelcount == 159)//ENTER HBLANCK:
             {
-                //ENTER HBLANCK:
                 mode = HBLANK;
+                if((stat>>3)&1)
+                    bus->write(0xFF0F,bus->read(0xFF0F)|2);
             }
         }
-        //if(scanline==0x8a)
-            //std::cout<<"dots:"<<dots<<std::endl;
+
         dots++;
-        if(dots == 456)
+        if(dots == 456) //Can't change mode here (may still be in VBLANK)
         {
             dots = 0;
             scanline++;
@@ -89,7 +82,6 @@ void PPU_Gameboy::tick()
             if((stat >> 4)&1) //Trigger VBLANK Interupt
             {
                 bus->write(0xFF0F,bus->read(0xFF0F)|1);
-                //bus->triggerInterupt(1);
             }
             DrawScreen();
         }
@@ -99,18 +91,14 @@ void PPU_Gameboy::tick()
             scanline = 0;
             dots = 0;
             pixelcount = 0;
-            //DrawScreen();
-            //nbframes++;
-            //if(nbframes == 60) {nbframes = 0; std::cout<<"frame\n";}
         }
         stat &= 0b1'1111'0'11;//reset the lyc=ly flag
         if(scanline == lyc) //trigger it only once
         {
             stat |= 4;
-            if(dots == 0 && (stat >> 6)&1) //Trigger VBLANK Interupt
+            if(dots == 0 && (stat >> 6)&1) //Trigger LYC Interupt
             {
                 bus->write(0xFF0F,bus->read(0xFF0F)|2);
-                //bus->triggerInterupt(2);
             }
         }
         stat = (stat&0b1'1111'1'00) + mode;
@@ -119,19 +107,24 @@ void PPU_Gameboy::tick()
 
 void PPU_Gameboy::generatePixel(uint8_t y, uint8_t x)
 {
-    //TODO: No scrolling for now-->no wrapping
-    uint8_t tileX = (x + scx) / 8;
-    uint8_t tileY = (y + scy) / 8;
-    uint8_t tileCode = vram[(tileY*32+tileX) + GetBGMapOffset()];
-    uint16_t line = GetTileLine(tileCode,(y+scy)%8);
+    if(lcdc & 1) //Draw the background if enabled
+    {
+        uint8_t pixelX = x + scx;
+        uint8_t pixelY = y + scy;
+        if(pixelX > 32*8) pixelX-= 32*8;
+        if(pixelY > 32*8) pixelY-=32*8;
+        uint8_t tileX = pixelX / 8;
+        uint8_t tileY = pixelY / 8;
+        uint8_t tileCode = read((tileY*32+tileX) + GetBGMapOffset());
+        uint16_t line = GetTileLine(tileCode,(y+scy)%8);
 
-    uint8_t inTileX = (x + scx) % 8;
-    //uint8_t inTileY = (y + scy) % 8;
-    uint8_t upper = (line >> (7-inTileX))&1;
-    uint8_t lower = ((line>>8) >> (7-inTileX))&1;
-    uint8_t pixelData = lower + (upper<<1);
-    uint8_t palette = bgp;
-    UpdateScreen(pixelData,y,x,palette);
+        uint8_t inTileX = (x + scx) % 8;
+        uint8_t upper = (line >> (7-inTileX))&1;
+        uint8_t lower = ((line>>8) >> (7-inTileX))&1;
+        uint8_t pixelData = lower + (upper<<1);
+        uint8_t palette = bgp;
+        UpdateScreen(pixelData,y,x,palette);
+    }
 }
 
 void PPU_Gameboy::UpdateScreen(uint8_t pixelData,uint8_t y, uint8_t x, uint8_t palette)
@@ -185,12 +178,12 @@ uint16_t PPU_Gameboy::GetTileLine(uint8_t tileCode,uint8_t line)
             index += 0x8800;
         }
     }
-    return vram[index-0x8000]+(vram[index-0x8000+1]<<8);//TODO: USE read/write methods
+    return read(index) + (read(index+1)<<8);
 }
 
 uint16_t PPU_Gameboy::GetBGMapOffset()
 {
-    return (((lcdc >> 3)&1) ? 0x9C00 : 0x9800)- 0x8000;
+    return (((lcdc >> 3)&1) ? 0x9C00 : 0x9800);//- 0x8000;
 }
 
 void PPU_Gameboy::write(uint16_t adr, uint8_t data)
@@ -240,9 +233,9 @@ uint8_t PPU_Gameboy::read(uint16_t adr)
     case 0xFF41:
         return stat;
     case 0xFF42:
-        return 0;//scy; //TODO:set that back
+        return scy;
     case 0xFF43:
-        return 0;//scx;
+        return scx;
     case 0xFF44: //LY
         return scanline;
     case 0xFF45:

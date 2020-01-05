@@ -5,5 +5,7 @@ trace.log
 *.depend
 obj/
 *.log
+ROMS/
+
 
 
