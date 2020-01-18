@@ -25,7 +25,9 @@ private:
     uint8_t lyc;
     uint8_t wy,wx;
     uint8_t stat = 0;
-    int nbframes = 0;
+    //int nbframes = 0;
+    uint8_t lower_tile=0, higher_tile=0, tileXOffset=0, tileYOffset=0, tileX=0, tileY=0;
+
     //uint8_t screen[160*144*4];
     std::vector<unsigned char> screen = std::vector<unsigned char>(160*144*4,0);
     void DrawScreen();
@@ -37,7 +39,8 @@ private:
 
     void generatePixel(uint8_t y, uint8_t x);
     uint16_t GetBGMapOffset();
-    uint16_t GetTileLine(uint8_t tileCode,uint8_t line);
+    uint16_t GetTileLineFromCode(uint8_t tileCode,uint8_t line);
+    void ComputeTileLine();
     void UpdateScreen(uint8_t pixelData,uint8_t y, uint8_t x, uint8_t palette);
 public:
     PPU_Gameboy();
@@ -50,7 +53,7 @@ public:
         tex = SDL_CreateTexture(ren,SDL_PIXELFORMAT_ABGR8888,SDL_TEXTUREACCESS_STREAMING,160,144);//TODO:debug format/understand it
     }
 
-    void tick();
+    bool tick();
 
     void write(uint16_t adr, uint8_t data);
     uint8_t read(uint16_t adr);

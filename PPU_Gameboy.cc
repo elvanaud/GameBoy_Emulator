@@ -14,9 +14,10 @@ PPU_Gameboy::~PPU_Gameboy()
     SDL_DestroyTexture(tex);
 }
 
-void PPU_Gameboy::tick()
+bool PPU_Gameboy::tick()
 {
     //test();
+    bool newFrame = false;
     if(((lcdc>>7)&1)==0)
     {
         stat = 0;
@@ -32,10 +33,15 @@ void PPU_Gameboy::tick()
             if(mode == 2 || dots == 0)
             {
                 mode = 2;
-                if(mode == 2 && dots == 0)
+                if(mode == 2 && dots == 0) //Enter OAM scan
                 {
                     if((stat >> 5)&1)
                         bus->write(0xFF0F,bus->read(0xFF0F)|2);
+                    tileY = (scy + scanline) >> 3;
+                    tileYOffset = (scy + scanline) & 0x07;
+                    tileX = scx >> 3;
+                    tileXOffset = scx & 0x07;
+                    ComputeTileLine();
                 }
                 //Probably implement OAM Bug or something
                 //For now, nothing happens
@@ -84,6 +90,7 @@ void PPU_Gameboy::tick()
                 bus->write(0xFF0F,bus->read(0xFF0F)|1);
             }
             DrawScreen();
+            newFrame = true;
         }
         if(scanline == 153 + 1) //EXIT VBLANK
         {
@@ -103,13 +110,14 @@ void PPU_Gameboy::tick()
         }
         stat = (stat&0b1'1111'1'00) + mode;
     }
+    return newFrame;
 }
 
 void PPU_Gameboy::generatePixel(uint8_t y, uint8_t x)
 {
     if(lcdc & 1) //Draw the background if enabled
     {
-        uint8_t pixelX = x + scx;
+        /*uint8_t pixelX = x + scx;
         uint8_t pixelY = y + scy;
         if(pixelX > 32*8) pixelX-= 32*8;
         if(pixelY > 32*8) pixelY-=32*8;
@@ -121,10 +129,30 @@ void PPU_Gameboy::generatePixel(uint8_t y, uint8_t x)
         uint8_t inTileX = (x + scx) % 8;
         uint8_t upper = (line >> (7-inTileX))&1;
         uint8_t lower = ((line>>8) >> (7-inTileX))&1;
-        uint8_t pixelData = lower + (upper<<1);
+        uint8_t pixelData = lower + (upper<<1);*/
+
+        uint8_t pixelData = (lower_tile >> 7) | ((higher_tile >> 6)&2);
+        lower_tile <<=1; higher_tile <<=1;
+        tileXOffset++;
+        if(tileXOffset == 8)
+        {
+            tileXOffset = 0;
+            tileX++;
+            tileX &= 0x3F; //Modulo for scrolling
+            ComputeTileLine();
+        }
+
         uint8_t palette = bgp;
         UpdateScreen(pixelData,y,x,palette);
     }
+}
+
+void PPU_Gameboy::ComputeTileLine()
+{
+    uint8_t tileCode = read((tileY*32+tileX) + GetBGMapOffset());
+    uint16_t line = GetTileLineFromCode(tileCode,tileYOffset);
+    lower_tile = line>>8;
+    higher_tile = line & 0xFF;
 }
 
 void PPU_Gameboy::UpdateScreen(uint8_t pixelData,uint8_t y, uint8_t x, uint8_t palette)
@@ -160,7 +188,7 @@ void PPU_Gameboy::DrawScreen()
     SDL_RenderPresent(ren);
 }
 
-uint16_t PPU_Gameboy::GetTileLine(uint8_t tileCode,uint8_t line)
+uint16_t PPU_Gameboy::GetTileLineFromCode(uint8_t tileCode,uint8_t line)
 {
     uint16_t index = tileCode*16 + 2*line;
     if((lcdc >> 4)&1)

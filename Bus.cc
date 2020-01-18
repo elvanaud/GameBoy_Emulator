@@ -266,106 +266,115 @@ void Bus::run()
     std::vector<uint8_t> dmp;
 
     bool over = false;
-
+    uint64_t nbInst = 0;
+    uint64_t nbCycles = 0;
+    clock_t startTime = clock();
     SDL_Event e;
+    bool newFrame = true;
     while (!over)
     {
-        while (SDL_PollEvent(&e))
+        //nbCycles++;
+        if(newFrame)
         {
-            if (e.type == SDL_QUIT)
+            while (SDL_PollEvent(&e))
             {
-                over = true;
-            }
-            else if(e.type == SDL_KEYDOWN || e.type == SDL_KEYUP)
-            {
-                //Controls:
-                //std::vector<SDL_Keycode> controller_keys = {SDLK_DOWN,SDLK_UP,SDLK_RIGHT,SDLK_LEFT,SDLK_SPACE,SDLK_RETURN,SDLK_a,SDLK_z,SDLK_a};
-                std::map<SDL_EventType,Controller_Signal> sdl_signal; sdl_signal[SDL_KEYDOWN] = Sig_DOWN; sdl_signal[SDL_KEYUP] = Sig_UP;
-                std::map<SDL_Keycode,Controller_Key> controller_keys = {{SDLK_DOWN,Cont_DOWN},{SDLK_UP,Cont_UP},{SDLK_RIGHT,Cont_RIGHT},
-                    {SDLK_LEFT,Cont_LEFT},{SDLK_SPACE,Cont_SELECT},{SDLK_RETURN,Cont_START},{SDLK_a,Cont_A},{SDLK_z,Cont_B}};
-                if(controller_keys.count(e.key.keysym.sym) == 1)
+                if (e.type == SDL_QUIT)
                 {
-                    Controller_Signal signal = sdl_signal[(SDL_EventType)e.type];
-                    if(controller_keys_state[controller_keys[e.key.keysym.sym]] == Sig_UP && signal == Sig_DOWN)
+                    over = true;
+                }
+                else if(e.type == SDL_KEYDOWN || e.type == SDL_KEYUP)
+                {
+                    //Controls:
+                    //std::vector<SDL_Keycode> controller_keys = {SDLK_DOWN,SDLK_UP,SDLK_RIGHT,SDLK_LEFT,SDLK_SPACE,SDLK_RETURN,SDLK_a,SDLK_z,SDLK_a};
+                    std::map<SDL_EventType,Controller_Signal> sdl_signal;
+                    sdl_signal[SDL_KEYDOWN] = Sig_DOWN;
+                    sdl_signal[SDL_KEYUP] = Sig_UP;
+                    std::map<SDL_Keycode,Controller_Key> controller_keys = {{SDLK_DOWN,Cont_DOWN},{SDLK_UP,Cont_UP},{SDLK_RIGHT,Cont_RIGHT},
+                        {SDLK_LEFT,Cont_LEFT},{SDLK_SPACE,Cont_SELECT},{SDLK_RETURN,Cont_START},{SDLK_a,Cont_A},{SDLK_z,Cont_B}};
+                    if(controller_keys.count(e.key.keysym.sym) == 1)
                     {
-                        write(0xFF0F,read(0xFF0F)|16);
-                        stopMode = false;
+                        Controller_Signal signal = sdl_signal[(SDL_EventType)e.type];
+                        if(controller_keys_state[controller_keys[e.key.keysym.sym]] == Sig_UP && signal == Sig_DOWN)
+                        {
+                            write(0xFF0F,read(0xFF0F)|16);
+                            stopMode = false;
+                        }
+                        controller_keys_state[controller_keys[e.key.keysym.sym]] = signal;
                     }
-                    controller_keys_state[controller_keys[e.key.keysym.sym]] = signal;
                 }
-            }
-            //Debug events
-            if (e.type == SDL_KEYDOWN)// || e.type == SDL_KEYUP)
-            {
-                //if(e.key.keysym.sym == SDLK_DOWN)
-                if(e.key.keysym.sym == SDLK_s)//enable stepping
+                //Debug events
+                if (e.type == SDL_KEYDOWN)// || e.type == SDL_KEYUP)
                 {
-                    stepping = true;
-                    step = true;
-                }
-                if(e.key.keysym.sym == SDLK_c) //continue
-                {
-                    stepping = false;
-                }
-                if(e.key.keysym.sym == SDLK_d) //debug
-                {
-                    debug = !debug;
-                }
-                if(e.key.keysym.sym == SDLK_w)
-                {
-                    //Watch memory
-                    std::cout << "Watch Memory address:";
-                    uint16_t user_entry;
-                    std::cin >> std::hex >> user_entry;
-                    watchAdr.push_back(user_entry);
-                    std::cout << std::hex << user_entry << ": " << (int)read(user_entry) << std::endl;
-                }
-                if(e.key.keysym.sym == SDLK_b)
-                {
-
-                    breakpointEnable = true;//Toggle breakpoint
-                    std::cout << "Toggle breakpoint:";
-                    uint16_t user_entry;
-                    std::cin >> std::hex >> user_entry;
-                    //Single breakpoint for now:
-                    if(breakpoint == user_entry)
+                    //if(e.key.keysym.sym == SDLK_DOWN)
+                    if(e.key.keysym.sym == SDLK_s)//enable stepping
                     {
-                        breakpoint = 0; //disable (never used for code)
-                        stepping = false; //todo: change behavior
-                        breakpointEnable = false;
+                        stepping = true;
+                        step = true;
                     }
-                    else
-                        breakpoint = user_entry;
-                }
-
-                if(e.key.keysym.sym == SDLK_m)
-                {
-                    memoryBreakPointEnable = true;//Toggle breakpoint
-                    std::cout << "Toggle memory breakpoint - adr:";
-                    uint16_t user_entry;
-                    std::cin >> std::hex >> user_entry;
-                    //Single breakpoint for now:
-                    if(memBpAdr == user_entry)
+                    if(e.key.keysym.sym == SDLK_c) //continue
                     {
-                        memBpAdr = 0; //disable (never used for code)
-                        //stepping = false; //todo: change behavior
-                        memoryBreakPointEnable = false;
+                        stepping = false;
                     }
-                    else
-                        memBpAdr = user_entry;
-                    std::cout << "\nValue:";
-                    //std::cin.ignore();
-                    std::cin>>std::hex>>user_entry;//works on uint16_t
-                    memBpVal = user_entry;
-                }
-                if(debug && e.key.keysym.sym == SDLK_a)
-                {
-                    //trigger asm [-10;+10]
-                    //use array 32kb: adr = index
-                    triggerAsm = !triggerAsm;
-                    //std::cout << showMemory(0x100,0x110);
+                    if(e.key.keysym.sym == SDLK_d) //debug
+                    {
+                        debug = !debug;
+                    }
+                    if(e.key.keysym.sym == SDLK_w)
+                    {
+                        //Watch memory
+                        std::cout << "Watch Memory address:";
+                        uint16_t user_entry;
+                        std::cin >> std::hex >> user_entry;
+                        watchAdr.push_back(user_entry);
+                        std::cout << std::hex << user_entry << ": " << (int)read(user_entry) << std::endl;
+                    }
+                    if(e.key.keysym.sym == SDLK_b)
+                    {
 
-                    //genAsm(asmArray); //already done(in construction)
+                        breakpointEnable = true;//Toggle breakpoint
+                        std::cout << "Toggle breakpoint:";
+                        uint16_t user_entry;
+                        std::cin >> std::hex >> user_entry;
+                        //Single breakpoint for now:
+                        if(breakpoint == user_entry)
+                        {
+                            breakpoint = 0; //disable (never used for code)
+                            stepping = false; //todo: change behavior
+                            breakpointEnable = false;
+                        }
+                        else
+                            breakpoint = user_entry;
+                    }
+
+                    if(e.key.keysym.sym == SDLK_m)
+                    {
+                        memoryBreakPointEnable = true;//Toggle breakpoint
+                        std::cout << "Toggle memory breakpoint - adr:";
+                        uint16_t user_entry;
+                        std::cin >> std::hex >> user_entry;
+                        //Single breakpoint for now:
+                        if(memBpAdr == user_entry)
+                        {
+                            memBpAdr = 0; //disable (never used for code)
+                            //stepping = false; //todo: change behavior
+                            memoryBreakPointEnable = false;
+                        }
+                        else
+                            memBpAdr = user_entry;
+                        std::cout << "\nValue:";
+                        //std::cin.ignore();
+                        std::cin>>std::hex>>user_entry;//works on uint16_t
+                        memBpVal = user_entry;
+                    }
+                    if(debug && e.key.keysym.sym == SDLK_a)
+                    {
+                        //trigger asm [-10;+10]
+                        //use array 32kb: adr = index
+                        triggerAsm = !triggerAsm;
+                        //std::cout << showMemory(0x100,0x110);
+
+                        //genAsm(asmArray); //already done(in construction)
+                    }
                 }
             }
         }
@@ -386,6 +395,8 @@ void Bus::run()
                     dump+=csvGet(cpu.trace(true,true,true),"SP")+";";*/
                     //dump+=cpu.trace(false);
                     cpu.binaryDump(dmp);
+                    nbInst++;
+                    //if(nbInst >= 0x3e0000) over = true;
                 }
 
                 instcycles = cpu.tick();
@@ -432,7 +443,7 @@ void Bus::run()
                 SDL_Delay(0.001);
 
             }
-            ppu.tick();
+            newFrame = ppu.tick();
             tim.tick();
             cpt++;
         }
@@ -442,6 +453,9 @@ void Bus::run()
             //over = true; //todo: trigger on interupt from p10-...
         }
     }
+    clock_t endTime = clock();
+    double duration = ((double)(endTime-startTime)) / CLOCKS_PER_SEC;
+    std::cout << "\nTime:" << duration << " Nb inst: " << nbInst << " Nb cycles:" << nbCycles << "\n";
 
     std::cout <<"Result:"<< msg << std::endl;
     //std::cout <<dump;
