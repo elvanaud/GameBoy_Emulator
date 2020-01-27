@@ -52,6 +52,7 @@ void Bus::loadCartridge(std::string path)
     if(!input) std::cout << "ERREUR: FIchier ROM introuvable\n";
 
     input.read((char*)ram,0x8000);
+    std::cout << "Type: " << (int)ram[0x147] << " ROM: " << (int)ram[0x148] << " RAM: " << (int)ram[0x149] << std::endl;
 }
 
 void Bus::write(uint16_t adr, uint8_t data)
@@ -251,9 +252,9 @@ std::string csvGet(std::string src,std::string field)
 void Bus::run()
 {
     uint8_t cpt = 4;
-    bool stepping = false;
+    bool stepping = true;
     bool step = true;
-    bool debug = false;
+    bool debug = stepping;
     uint8_t instcycles = 0;
     std::vector<uint16_t> watchAdr;
     bool breakpointEnable = false;
@@ -274,7 +275,7 @@ void Bus::run()
     while (!over)
     {
         //nbCycles++;
-        if(newFrame)
+        if(newFrame && !debug)
         {
             while (SDL_PollEvent(&e))
             {
@@ -302,10 +303,27 @@ void Bus::run()
                         controller_keys_state[controller_keys[e.key.keysym.sym]] = signal;
                     }
                 }
-                //Debug events
-                if (e.type == SDL_KEYDOWN)// || e.type == SDL_KEYUP)
+                if(e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_d) //enable debug mode
                 {
-                    //if(e.key.keysym.sym == SDLK_DOWN)
+                    debug = !debug;
+                }
+
+            }
+        }
+        else if(debug || stepping) //TODO: verify all that behavior
+        {
+            while(SDL_PollEvent(&e)) //Debug events
+            {
+                if(e.type == SDL_QUIT)
+                {
+                    over = true;
+                }
+                else if (e.type == SDL_KEYDOWN)// || e.type == SDL_KEYUP)
+                {
+                    if(e.key.keysym.sym == SDLK_d) //debug
+                    {
+                        debug = !debug;
+                    }
                     if(e.key.keysym.sym == SDLK_s)//enable stepping
                     {
                         stepping = true;
@@ -315,10 +333,7 @@ void Bus::run()
                     {
                         stepping = false;
                     }
-                    if(e.key.keysym.sym == SDLK_d) //debug
-                    {
-                        debug = !debug;
-                    }
+
                     if(e.key.keysym.sym == SDLK_w)
                     {
                         //Watch memory
@@ -403,9 +418,9 @@ void Bus::run()
 
                 step = false;
                 if(breakpointEnable&&instcycles==0&&cpu.getPC() == breakpoint)
-                    stepping = true; //step = true
+                    {stepping = true; std::cout << "Breakpoint hit !\n";}
                 if(memoryBreakPointEnable&&instcycles==0 && read(memBpAdr)==memBpVal)
-                    stepping = true;
+                    {stepping = true; std::cout << "Memory Breakpoint hit !\n";}
                 if(debug&&instcycles==0)
                 {
                     std::cout << cpu.trace() << std::endl<<cpu.instDump()<<std::endl;

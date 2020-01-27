@@ -244,6 +244,11 @@ private:
         uint8_t if_reg = read(0xFF0F);
         uint8_t ie_reg = read(0xFFFF);
         uint8_t masked = if_reg & ie_reg;
+        //std::cout <<"INTERUPTS!\n"<<(int)if_reg<<", "<< (int)ie_reg<<", "<<(int)masked<<", "<<(int)ime<<std::endl;
+        if(masked != 0)
+        {
+            //std::cout<<"INT!\n";
+        }
         for(int bit = 0; bit < 5; bit++)
         {
             uint8_t interupt = (masked>>bit)&1;

@@ -27,7 +27,8 @@ bool PPU_Gameboy::tick()
         cycles = 0;
         pixelcount = 0;
     }
-    else{
+    else
+    {
         if(mode != VBLANK)
         {
             if(mode == 2 || dots == 0)
@@ -42,6 +43,43 @@ bool PPU_Gameboy::tick()
                     tileX = scx >> 3;
                     tileXOffset = scx & 0x07;
                     ComputeTileLine();
+
+                    //Preprocess sprites:
+                    uint8_t oamLine[10][4] = {0};
+                    int nbSpritesOnLine = 0;
+                    for(uint16_t objectIndex = 0xFE00; objectIndex < 0xFE9F; objectIndex+= 4) //Parcours l'oam
+                    {
+                        if(read(objectIndex) <= scanline && scanline < read(objectIndex)+8)
+                        {
+                            for(uint16_t j = 0; j < 4; j++)
+                                oamLine[nbSpritesOnLine][j] = read(objectIndex+j); //Load 10 first objects of the line
+                            nbSpritesOnLine++;
+                            if(nbSpritesOnLine == 10)
+                                break;
+                        }
+                    }
+
+                    memset(screenLine,4,160);
+                    for(int i = 0; i < nbSpritesOnLine; i++) //TODO:Also manage 8x16 sprites
+                    {
+                        uint16_t sprite = GetTileLineFromCode(oamLine[i][2],scanline-oamLine[i][0],true); //TODO:manage flipping (oam character property)
+                        bool drawAllSprite = false;
+                        for(int j = 0; j < 8; j++)
+                        {
+                            if(!drawAllSprite && screenLine[oamLine[i][1]+j] == 4) //TODO:manage scrolling (border of the screen)
+                            {
+                                drawAllSprite = true;
+                            }
+                            if(drawAllSprite)
+                            {
+                                //std::cout << "DRAWING SPRITE\n" << (int) sprite << std::endl;
+                                uint8_t spriteXDot= oamLine[i][1]+j;
+                                if(spriteXDot >= 160) break;
+                                screenLine[spriteXDot] = ((sprite >> (15-j))&1) | ((sprite >> (7-j))&2);
+
+                            }
+                        }
+                    }
                 }
                 //Probably implement OAM Bug or something
                 //For now, nothing happens
@@ -84,6 +122,7 @@ bool PPU_Gameboy::tick()
         }
         if(scanline == 144 && dots == 0) //ENTER VBLANK
         {
+            //std::cout<<"VBLANK\n";
             mode = VBLANK;
             if((stat >> 4)&1) //Trigger VBLANK Interupt
             {
@@ -115,23 +154,12 @@ bool PPU_Gameboy::tick()
 
 void PPU_Gameboy::generatePixel(uint8_t y, uint8_t x)
 {
+    uint8_t pixelData = 0;
+    //uint8_t palette = 0; //DEFAULT PALETTE: pixelData=0 => blank screen
+    uint8_t palette = obp0;
     if(lcdc & 1) //Draw the background if enabled
     {
-        /*uint8_t pixelX = x + scx;
-        uint8_t pixelY = y + scy;
-        if(pixelX > 32*8) pixelX-= 32*8;
-        if(pixelY > 32*8) pixelY-=32*8;
-        uint8_t tileX = pixelX / 8;
-        uint8_t tileY = pixelY / 8;
-        uint8_t tileCode = read((tileY*32+tileX) + GetBGMapOffset());
-        uint16_t line = GetTileLine(tileCode,(y+scy)%8);
-
-        uint8_t inTileX = (x + scx) % 8;
-        uint8_t upper = (line >> (7-inTileX))&1;
-        uint8_t lower = ((line>>8) >> (7-inTileX))&1;
-        uint8_t pixelData = lower + (upper<<1);*/
-
-        uint8_t pixelData = (lower_tile >> 7) | ((higher_tile >> 6)&2);
+        pixelData = (lower_tile >> 7) | ((higher_tile >> 6)&2);
         lower_tile <<=1; higher_tile <<=1;
         tileXOffset++;
         if(tileXOffset == 8)
@@ -142,9 +170,19 @@ void PPU_Gameboy::generatePixel(uint8_t y, uint8_t x)
             ComputeTileLine();
         }
 
-        uint8_t palette = bgp;
-        UpdateScreen(pixelData,y,x,palette);
+        palette = bgp;
+
     }
+    if(lcdc & 2) //Display Sprites
+    {
+        if(screenLine[x] != 4)
+        {
+            //std::cout << (int) screenLine[x] << std::endl;
+            pixelData = screenLine[x];
+            //palette = //BIG PROBLEM: TODO: encode palette info in upper bits
+        }
+    }
+    UpdateScreen(pixelData,y,x,palette);
 }
 
 void PPU_Gameboy::ComputeTileLine()
@@ -188,10 +226,10 @@ void PPU_Gameboy::DrawScreen()
     SDL_RenderPresent(ren);
 }
 
-uint16_t PPU_Gameboy::GetTileLineFromCode(uint8_t tileCode,uint8_t line)
+uint16_t PPU_Gameboy::GetTileLineFromCode(uint8_t tileCode,uint8_t line, bool spriteMode)
 {
     uint16_t index = tileCode*16 + 2*line;
-    if((lcdc >> 4)&1)
+    if((lcdc >> 4)&1 || spriteMode)
     {
         index += 0x8000;
     }
@@ -219,6 +257,12 @@ void PPU_Gameboy::write(uint16_t adr, uint8_t data)
     if(adr >= 0x8000 && adr <= 0x9FFF)
     {
         vram[adr-0x8000] = data;
+        return;
+    }
+    if(adr >= 0xFE00 && adr <= 0xFE9F)
+    {
+        oam[adr-0xFE00] = data;
+        return;
     }
     switch(adr)
     {
@@ -254,6 +298,8 @@ uint8_t PPU_Gameboy::read(uint16_t adr)
     //TODO: implement blocking depending on current mode
     if(adr >= 0x8000 && adr <= 0x9FFF)
         return vram[adr-0x8000];
+    if(adr >= 0xFE00 && adr <= 0xFE9F)
+        return oam[adr-0xFE00];
     switch(adr)
     {
     case 0xFF40:

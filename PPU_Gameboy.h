@@ -20,6 +20,7 @@ private:
     uint8_t pixelcount = 0;
     uint8_t scx = 0,scy = 0;
     uint8_t vram[0x2000];
+    uint8_t oam[40*4];
     uint8_t lcdc = 0x91;
     uint8_t bgp = 0b11'10'01'00,obp0=0b00'01'10'11,obp1;
     uint8_t lyc;
@@ -27,6 +28,7 @@ private:
     uint8_t stat = 0;
     //int nbframes = 0;
     uint8_t lower_tile=0, higher_tile=0, tileXOffset=0, tileYOffset=0, tileX=0, tileY=0;
+    uint8_t screenLine[160];
 
     //uint8_t screen[160*144*4];
     std::vector<unsigned char> screen = std::vector<unsigned char>(160*144*4,0);
@@ -39,7 +41,7 @@ private:
 
     void generatePixel(uint8_t y, uint8_t x);
     uint16_t GetBGMapOffset();
-    uint16_t GetTileLineFromCode(uint8_t tileCode,uint8_t line);
+    uint16_t GetTileLineFromCode(uint8_t tileCode,uint8_t line,bool spriteMode=false);
     void ComputeTileLine();
     void UpdateScreen(uint8_t pixelData,uint8_t y, uint8_t x, uint8_t palette);
 public:
@@ -89,13 +91,16 @@ public:
         for(uint16_t i = 0; i < 16; i++)
         {
             //vram[i] = pic[i];
-            vram[i+16*32] = pic[i];
+            //vram[i+16*32] = pic[i];
+            vram[i] = pic[i];
+            //vram[i+16] = pic[i];
+            //vram[i+32] = pic[i];
         }
 
-        for(uint16_t i = 0x9800; i < 0x9FFF; i++)
+        /*for(uint16_t i = 0x9800; i < 0x9FFF; i++)
         {
             //vram[i-0x8000] = 36;
-        }
+        }*/
     }
 };
 
