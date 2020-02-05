@@ -7,6 +7,7 @@
 //#include <SFML/Graphics.hpp>
 #include <vector>
 #include <map>
+#include <list>
 
 Bus::Bus(Z80_Gameboy & c, PPU_Gameboy & p,Timer_Gameboy & t)
     :cpu(c),ppu(p),tim(t)
@@ -18,7 +19,7 @@ Bus::Bus(Z80_Gameboy & c, PPU_Gameboy & p,Timer_Gameboy & t)
     {
         std::cout << "BIGPROBLEM\n";
     }
-    win = SDL_CreateWindow("GameBoy Emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 480, SDL_WINDOW_SHOWN);
+    win = SDL_CreateWindow("GameBoy Emulator", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 640, 576, SDL_WINDOW_SHOWN);
     if (win == nullptr)
     {
         std::cout << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
@@ -53,6 +54,7 @@ void Bus::loadCartridge(std::string path)
 
     input.read((char*)ram,0x8000);
     std::cout << "Type: " << (int)ram[0x147] << " ROM: " << (int)ram[0x148] << " RAM: " << (int)ram[0x149] << std::endl;
+    std::cout << "Value of 0x40: "<<(int) ram[0x40]<<std::endl;
 }
 
 void Bus::write(uint16_t adr, uint8_t data)
@@ -61,7 +63,9 @@ void Bus::write(uint16_t adr, uint8_t data)
     if(adr >= 0x0000 && adr <= 0x7FFF) //ROM
     {
         //cartridge.write(adr,data);
-        ram[adr] = data;
+        //ram[adr] = data;
+        //std::cout<<"Writing in ROM!: adr:"<<(int)adr<<" , value: "<<(int)data<<std::endl;
+        //if(adr==0x40) std::cout<<"------------------------------------------------------------------------\n";
     }
     else if(adr >= 0x8000 && adr <= 0x9FFF) //VRAM
     {
@@ -78,7 +82,7 @@ void Bus::write(uint16_t adr, uint8_t data)
     }
     else if(adr >= 0xE000 && adr <= 0xFDFF) //Mirror WRAM
     {
-        ram[adr-0xE000] = data;
+        ram[adr-0xE000+0xC000] = data;
     }
     else if(adr >= 0xFE00 && adr <= 0xFE9F) //OAM
     {
@@ -92,6 +96,7 @@ void Bus::write(uint16_t adr, uint8_t data)
     {
         if(adr == 0xFF00)
         {
+            //controller_keys_state[Cont_START] = Sig_DOWN;
             uint8_t base = 0b10'00'0000;
             uint8_t keys = 0b0000'0000;
             int mask = 1;
@@ -160,7 +165,7 @@ uint8_t Bus::read(uint16_t adr)
     }
     else if(adr >= 0xE000 && adr <= 0xFDFF) //Mirror WRAM
     {
-
+        return ram[adr-0xE000+0xC000];
     }
     else if(adr >= 0xFE00 && adr <= 0xFE9F) //OAM
     {
@@ -272,6 +277,10 @@ void Bus::run()
     clock_t startTime = clock();
     SDL_Event e;
     bool newFrame = true;
+    int fixedDumpEnabled = 0;
+    std::list<std::string> fixedDump;
+    bool  dump_membp = false;
+
     while (!over)
     {
         //nbCycles++;
@@ -301,6 +310,7 @@ void Bus::run()
                             stopMode = false;
                         }
                         controller_keys_state[controller_keys[e.key.keysym.sym]] = signal;
+                        //controller_keys_state[Cont_START] = Sig_DOWN;
                     }
                 }
                 if(e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_d) //enable debug mode
@@ -379,6 +389,7 @@ void Bus::run()
                         std::cout << "\nValue:";
                         //std::cin.ignore();
                         std::cin>>std::hex>>user_entry;//works on uint16_t
+                        std::cin.ignore();
                         memBpVal = user_entry;
                     }
                     if(debug && e.key.keysym.sym == SDLK_a)
@@ -389,6 +400,40 @@ void Bus::run()
                         //std::cout << showMemory(0x100,0x110);
 
                         //genAsm(asmArray); //already done(in construction)
+                    }
+                    if(debug && e.key.keysym.sym == SDLK_v)
+                    {
+                        std::cout << "Type your command: ";
+                        std::string user_entry;
+                        //std::cin >> user_entry;
+                        std::getline(std::cin, user_entry);
+                        auto command = split(user_entry, ' ');
+                        if(command[0] == "dump")
+                        {
+                            if(command[1] == "add")
+                            {
+                                if(command[2] == "memory_breakpoint")
+                                {
+                                    dump_membp = true;
+                                }
+                            }
+                            else
+                            {
+                                fixedDumpEnabled = std::stoi(command[1]);
+                                fixedDump.clear();
+                            }
+
+                        }
+                        else if(command[0] == "show")
+                        {
+                            if(command[1] == "dump")
+                            {
+                                for(auto line : fixedDump)
+                                {
+                                    std::cout << line << std::endl;
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -409,12 +454,35 @@ void Bus::run()
                     dump+=csvGet(cpu.trace(true,true,true),"BC")+";";
                     dump+=csvGet(cpu.trace(true,true,true),"SP")+";";*/
                     //dump+=cpu.trace(false);
-                    cpu.binaryDump(dmp);
+                    //cpu.binaryDump(dmp);
                     nbInst++;
+                    if(fixedDumpEnabled != 0)
+                    {
+                        std::stringstream line; line << cpu.trace(false);
+                        if(dump_membp)
+                        {
+                            line << ";  [" << memBpAdr << "] = " << (int)read(memBpAdr);
+                        }
+                        fixedDump.push_back(line.str());
+
+                        if(fixedDumpEnabled == fixedDump.size())
+                            fixedDump.pop_front();
+                    }
                     //if(nbInst >= 0x3e0000) over = true;
+                    /*if(ram[0x40] == 0x2F)
+                    {
+                        std::cout << "wtf ------"<<nbInst<<"----------\n";
+                        stepping = true;
+                    }*/
                 }
 
                 instcycles = cpu.tick();
+
+                /*if(nbInst == 0x477ed0) //973dc0 //depends on speed to press buttons...
+                {
+                    std::cout<<"sah\n";
+                    stepping = true;
+                }*/
 
                 step = false;
                 if(breakpointEnable&&instcycles==0&&cpu.getPC() == breakpoint)
@@ -465,6 +533,9 @@ void Bus::run()
         if(stopMode)
         {
             std::cout<<"STOP";
+            stopMode = false;
+            stepping = true;
+            debug = true;
             //over = true; //todo: trigger on interupt from p10-...
         }
     }
@@ -477,8 +548,8 @@ void Bus::run()
     /*std::ofstream of;
     of.open("tracetxt.log");
     of<<dump;
-    of.close();*/
-
-    auto myfile = std::fstream("trace.log", std::ios::out | std::ios::binary);
-    myfile.write((char*)dmp.data(),dmp.size()*sizeof(uint8_t));
+    of.close();
+*/
+    //auto myfile = std::fstream("trace.log", std::ios::out | std::ios::binary);
+    //myfile.write((char*)dmp.data(),dmp.size()*sizeof(uint8_t));
 }
