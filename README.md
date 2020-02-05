@@ -16,4 +16,5 @@ Hi! This is a personal project I've been woking on for a while. This emulator do
 ![alt text](https://raw.githubusercontent.com/elvanaud/GameBoy_Emulator/master/tetris_preview1.png)
 ![alt text](https://raw.githubusercontent.com/elvanaud/GameBoy_Emulator/master/tetris_preview2.png)
 
-The emulator cannot go any further as of right now because I haven't implemented the controls yet.
+Recently I managed to fix most of the issues, so here is Tetris running:
+![alt text](https://raw.githubusercontent.com/elvanaud/GameBoy_Emulator/master/tetris.gif)
