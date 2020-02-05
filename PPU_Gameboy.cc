@@ -47,9 +47,13 @@ bool PPU_Gameboy::tick()
                     //Preprocess sprites:
                     uint8_t oamLine[10][4] = {0};
                     int nbSpritesOnLine = 0;
+                    uint8_t spriteHeight = 8;
+                    bool y16Mode = ((lcdc>>2)&1) == 1;
+                    if(y16Mode) //If 8*16 mode
+                        spriteHeight = 16;
                     for(uint16_t objectIndex = 0xFE00; objectIndex < 0xFE9F; objectIndex+= 4) //Parcours l'oam
                     {
-                        if(read(objectIndex) <= scanline && scanline < read(objectIndex)+8)
+                        if(read(objectIndex) <= scanline+16 && scanline+16 < read(objectIndex)+spriteHeight)
                         {
                             for(uint16_t j = 0; j < 4; j++)
                                 oamLine[nbSpritesOnLine][j] = read(objectIndex+j); //Load 10 first objects of the line
@@ -60,23 +64,41 @@ bool PPU_Gameboy::tick()
                     }
 
                     memset(screenLine,4,160);
-                    for(int i = 0; i < nbSpritesOnLine; i++) //TODO:Also manage 8x16 sprites
+                    for(int i = 0; i < nbSpritesOnLine; i++)
                     {
-                        uint16_t sprite = GetTileLineFromCode(oamLine[i][2],scanline-oamLine[i][0],true); //TODO:manage flipping (oam character property)
-                        bool drawAllSprite = false;
-                        for(int j = 0; j < 8; j++)
+                        uint8_t spriteY = scanline+16 - oamLine[i][0];
+                        uint8_t charCode = oamLine[i][2];
+                        if(y16Mode)
                         {
-                            if(!drawAllSprite && screenLine[oamLine[i][1]+j] == 4) //TODO:manage scrolling (border of the screen)
+                            charCode &= (~1);
+                            if(spriteY >= 8)
+                            {
+                                charCode |= 1;
+                                spriteY -= 8;
+                            }
+                        }
+                        if((oamLine[i][3]>>6)&1) //Y-flip ( TODO: verify 8*16 mode )
+                        {
+                            spriteY = 7 - spriteY;
+                        }
+                        uint16_t sprite = GetTileLineFromCode(charCode,spriteY,true);
+                        bool drawAllSprite = false;
+                        for(int j = (oamLine[i][1] < 8 ? (8-oamLine[i][1]) : 0); j < 8; j++) //Ternary here to have x sprite scroling
+                        {
+                            uint8_t spriteXDot= oamLine[i][1]+j-8; //-8 here for x scrolling
+                            if(spriteXDot >= 160) break;
+                            if(!drawAllSprite && screenLine[spriteXDot] == 4)
                             {
                                 drawAllSprite = true;
                             }
                             if(drawAllSprite)
                             {
-                                //std::cout << "DRAWING SPRITE\n" << (int) sprite << std::endl;
-                                uint8_t spriteXDot= oamLine[i][1]+j;
-                                if(spriteXDot >= 160) break;
-                                screenLine[spriteXDot] = ((sprite >> (15-j))&1) | ((sprite >> (7-j))&2);
-
+                                int spriteIndex = j;
+                                if((oamLine[i][3] >> 5)&1) //X-flip
+                                {
+                                    spriteIndex = 7 - spriteIndex;
+                                }
+                                screenLine[spriteXDot] = ((sprite >> (15-spriteIndex))&1) | (((sprite >> (7-spriteIndex))<<1)&2);
                             }
                         }
                     }
@@ -205,8 +227,15 @@ void PPU_Gameboy::UpdateScreen(uint8_t pixelData,uint8_t y, uint8_t x, uint8_t p
 
 void PPU_Gameboy::DrawScreen()
 {
-    SDL_SetRenderDrawColor( ren, 0, 0, 0, SDL_ALPHA_OPAQUE );
+    SDL_SetRenderDrawColor(ren, 0, 0, 0, SDL_ALPHA_OPAQUE );
     SDL_RenderClear(ren);
+    /*for(int i = 0; i < 2; i++)
+    {
+        for(int j=0; j < 160; j++)
+        {
+            screen[(i*160+j)*4+0]=255;
+        }
+    }*/
 
     /*for( unsigned int i = 0; i < 160*144; i++ )
         {
@@ -252,6 +281,16 @@ uint16_t PPU_Gameboy::GetBGMapOffset()
     return (((lcdc >> 3)&1) ? 0x9C00 : 0x9800);//- 0x8000;
 }
 
+void PPU_Gameboy::DMA_Transfer() //TODO: wait 160 cycles
+{
+    uint16_t starting_adress = ((uint16_t)dma_starting_adress)<<8;
+    for(uint16_t i = 0xFE00; i <= 0xFE9F;i++) //Exactly 160 iterations... => manage cycle count with this..
+    {
+        write(i,bus->read(starting_adress));
+        starting_adress++;
+    }
+}
+
 void PPU_Gameboy::write(uint16_t adr, uint8_t data)
 {
     if(adr >= 0x8000 && adr <= 0x9FFF)
@@ -279,6 +318,9 @@ void PPU_Gameboy::write(uint16_t adr, uint8_t data)
         break;
     case 0xFF45:
         lyc = data; break;
+    case 0xFF46: //DMA Transfer
+        dma_starting_adress = data;
+        DMA_Transfer(); break;
     case 0xFF47:
         std::cout << "WRITE TO BG PALETTE\n";
         bgp = data; break;
@@ -314,6 +356,8 @@ uint8_t PPU_Gameboy::read(uint16_t adr)
         return scanline;
     case 0xFF45:
         return lyc;
+    case 0xFF46:
+        return dma_starting_adress;
     case 0xFF47:
         return bgp;
     case 0xFF48:

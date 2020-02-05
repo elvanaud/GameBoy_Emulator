@@ -191,11 +191,10 @@ uint8_t Z80_Gameboy::tick()
     {
         if(haltMode)
             return 0;
-        //cycles = Manage_Interupts();
         oldFlags = flags;
         fromPC = pc;
         opcode = read(pc);
-        //std::cout<<(int)opcode<<std::endl;
+
         if(disassemble)
         {
             pc = priv_pc;
@@ -205,38 +204,20 @@ uint8_t Z80_Gameboy::tick()
         for(int mask_type = 0; mask_type < MASK_TYPE_NB; mask_type++)
         {
             uint8_t masked_opcode = opcode & masks[mask_type];
-            //for(auto inst : instructions[mask_type])
-            /*for(int i = 0; i < instructions[mask_type].size();i++)
-            {
-                auto inst = instructions[mask_type][i];
-                if(inst.first == masked_opcode)
-                {
-                    inst.second(this);//executes the instruction
-                    cyclesInst = cycles;
-                    goto after_exec;
-                }
-            }*/
             instFound = true;
-            //std::cout<<mask_type<<" "<<std::bitset<8>(masked_opcode)<<std::endl;
+
             if(mask_type==4 && masked_opcode == 0b01'000'000)
                 LD_R_Rp();
             else
-            //try
-            {
                 instructions[mask_type][masked_opcode](this);
-            }
-                /*catch(...)
-                {
-                    std::cout<<"error: "<<(int)mask_type<<" "<<(int)masked_opcode<<" "<<(int)opcode<<std::endl;
-                }*/
             if(instFound)
             {
                 cyclesInst = cycles;
-                goto after_exec;
+                goto after_exec; //By the way since I changed the decode algorithm, a simple break; might work
             }
         }
         //If no instruction is found:
-        pc++; //try next one //TODO: Generate error maybe ?
+        //pc++; //try next one //TODO: Generate error maybe ?
         priv_pc++;//Just in case
         std::cout <<"ERREUR MONUMENTALE:NO INST FOUND:"<<std::bitset<8>(opcode)<<"\n---------------------------------\n";
         after_exec:

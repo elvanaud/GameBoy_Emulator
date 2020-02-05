@@ -30,11 +30,12 @@ private:
     uint8_t lower_tile=0, higher_tile=0, tileXOffset=0, tileYOffset=0, tileX=0, tileY=0;
     uint8_t screenLine[160];
 
+    uint8_t dma_starting_adress = 0;
+
     //uint8_t screen[160*144*4];
     std::vector<unsigned char> screen = std::vector<unsigned char>(160*144*4,0);
     void DrawScreen();
-    //sf::Texture texture;
-    //sf::Sprite sprite;
+
     SDL_Surface* surf;
     SDL_Texture* tex;
     SDL_Renderer * ren;
@@ -59,6 +60,8 @@ public:
 
     void write(uint16_t adr, uint8_t data);
     uint8_t read(uint16_t adr);
+
+    void DMA_Transfer();
 
     void test()
     {
