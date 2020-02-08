@@ -270,7 +270,6 @@ private:
                     sp = sp-2;
                     uint16_t adr[] = {0x40,0x48,0x50,0x58,0x60};
                     pc = adr[bit];
-                    //break;
                     return 5; //NUMBER OF CYCLES TO HANDLE INTERUPT
                 }
             }

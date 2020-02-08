@@ -284,7 +284,7 @@ void Bus::run()
     while (!over)
     {
         //nbCycles++;
-        if(newFrame && !debug)
+        if(newFrame && !debug) //TODO: change the condition to also check this when screen is disabled
         {
             while (SDL_PollEvent(&e))
             {
@@ -350,6 +350,7 @@ void Bus::run()
                         std::cout << "Watch Memory address:";
                         uint16_t user_entry;
                         std::cin >> std::hex >> user_entry;
+                        std::cin.ignore();
                         watchAdr.push_back(user_entry);
                         std::cout << std::hex << user_entry << ": " << (int)read(user_entry) << std::endl;
                     }
@@ -360,6 +361,7 @@ void Bus::run()
                         std::cout << "Toggle breakpoint:";
                         uint16_t user_entry;
                         std::cin >> std::hex >> user_entry;
+                        std::cin.ignore();
                         //Single breakpoint for now:
                         if(breakpoint == user_entry)
                         {

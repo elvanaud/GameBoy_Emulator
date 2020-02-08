@@ -38,8 +38,8 @@ bool PPU_Gameboy::tick()
                 {
                     if((stat >> 5)&1)
                         bus->write(0xFF0F,bus->read(0xFF0F)|2);
-                    tileY = (scy + scanline) >> 3;
-                    tileYOffset = (scy + scanline) & 0x07;
+                    tileY = (((scy + scanline)) >> 3)%32; //TODO: debug this
+                    tileYOffset = ((scy + scanline)) & 0x07;
                     tileX = scx >> 3;
                     tileXOffset = scx & 0x07;
                     ComputeTileLine();
@@ -146,7 +146,7 @@ bool PPU_Gameboy::tick()
         {
             //std::cout<<"VBLANK\n";
             mode = VBLANK;
-            if((stat >> 4)&1) //Trigger VBLANK Interupt
+            //if((stat >> 4)&1) //Trigger VBLANK Interupt
             {
                 bus->write(0xFF0F,bus->read(0xFF0F)|1);
             }
@@ -258,7 +258,7 @@ void PPU_Gameboy::DrawScreen()
 uint16_t PPU_Gameboy::GetTileLineFromCode(uint8_t tileCode,uint8_t line, bool spriteMode)
 {
     uint16_t index = tileCode*16 + 2*line;
-    if((lcdc >> 4)&1 || spriteMode)
+    if(((lcdc >> 4)&1)==1 || spriteMode)
     {
         index += 0x8000;
     }
@@ -270,7 +270,7 @@ uint16_t PPU_Gameboy::GetTileLineFromCode(uint8_t tileCode,uint8_t line, bool sp
         }
         else
         {
-            index += 0x8800;
+            index += 0x9000;
         }
     }
     return read(index) + (read(index+1)<<8);
@@ -345,7 +345,7 @@ uint8_t PPU_Gameboy::read(uint16_t adr)
     switch(adr)
     {
     case 0xFF40:
-        return lcdc; //TODO:should update value at some point
+        return lcdc;
     case 0xFF41:
         return stat;
     case 0xFF42:

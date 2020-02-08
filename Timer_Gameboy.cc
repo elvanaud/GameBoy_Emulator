@@ -55,10 +55,12 @@ void Timer_Gameboy::tick()
 
     if(prev_output && !output)
     {
+        //std::cout << "Timer:"<<(int)tima<<std::endl;
         tima++;
         if(tima == 0)
         {
             //todo:glitches
+            //std::cout << "interupt!\n";
             tima = tma;
             bus->write(0xFF0F,bus->read(0xFF0F)|(1<<2));
         }

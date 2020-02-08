@@ -26,16 +26,25 @@ int main(int argc, char **argv)
     //gb.loadCartridge("ROMS/cpu_instrs/individual/09-op r,r.gb"); //PASSED
     //gb.loadCartridge("ROMS/cpu_instrs/individual/10-bit ops.gb"); //PASSED
     //gb.loadCartridge("ROMS/cpu_instrs/individual/11-op a,(hl).gb"); //PASSED
+    //gb.loadCartridge("ROMS/instr_timing.gb"); //PASSED
+    //gb.loadCartridge("ROMS/01-read_timing.gb");
+    //gb.loadCartridge("ROMS/02-write_timing.gb");
+    //gb.loadCartridge("ROMS/03-modify_timing.gb");
 
-    //gb.loadCartridge("ROMS/Space Invaders (PD).gb");
-    gb.loadCartridge("ROMS/Tetris.GB");
+
+    //gb.loadCartridge("ROMS/Tetris.GB");
+    //gb.loadCartridge("ROMS/DRMARIO.GB");
+    //gb.loadCartridge("ROMS/opus5.gb");
+    //gb.loadCartridge("ROMS/lyc.gb");
     //gb.loadCartridge("ROMS/bpong.gb");
-    //gb.loadCartridge("ROMS/Soukoban (J).gb");
-    //gb.loadCartridge("ROMS/Mystical Ninja (U) [S][b1].gb");
+    gb.loadCartridge("ROMS/Soukoban (J).gb");
+
 
     //gb.loadCartridge("ROMS/warioland.gb");
     //gb.loadCartridge("ROMS/Donkey Kong Land (USA, Europe).gb");
     //gb.loadCartridge("ROMS/Super Mario Land (Patch FR).gb");
+    //gb.loadCartridge("ROMS/Space Invaders (PD).gb");
+    //gb.loadCartridge("ROMS/Mystical Ninja (U) [S][b1].gb");
 
 
     //gb.disassemble();
