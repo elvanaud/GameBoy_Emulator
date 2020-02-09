@@ -16,19 +16,21 @@ Hi! This is a personal project I've been woking on for a while. This emulator do
 <img src="https://raw.githubusercontent.com/elvanaud/GameBoy_Emulator/master/gif.gif" alt="drawing" width="300"/>
 
 # Here are functionning frames of Tetris
+| | |
+|---|---|
+| <img src="https://raw.githubusercontent.com/elvanaud/GameBoy_Emulator/master/tetris_preview1.png" alt="drawing" width="300"/> | <img src="https://raw.githubusercontent.com/elvanaud/GameBoy_Emulator/master/tetris_preview2.png" alt="drawing" width="300"/> |
 
-<img src="https://raw.githubusercontent.com/elvanaud/GameBoy_Emulator/master/tetris_preview1.png" alt="drawing" width="300"/>
-<img src="https://raw.githubusercontent.com/elvanaud/GameBoy_Emulator/master/tetris_preview2.png" alt="drawing" width="300"/>
 
 Recently I managed to fix most of the issues, so here is Tetris running:
 
 <img src="https://raw.githubusercontent.com/elvanaud/GameBoy_Emulator/master/tetris.gif" alt="drawing" width="300"/>
 
 ## Almost finished
-<img src="https://raw.githubusercontent.com/elvanaud/GameBoy_Emulator/master/donkeykong3.gif" alt="animated gifs" width="300"/>
-<img src="https://raw.githubusercontent.com/elvanaud/GameBoy_Emulator/master/drmario2.gif" alt="animated gifs" width="300"/>
-<img src="https://raw.githubusercontent.com/elvanaud/GameBoy_Emulator/master/drmario.gif" alt="animated gifs" width="300"/>
-<img src="https://raw.githubusercontent.com/elvanaud/GameBoy_Emulator/master/linksawakening.gif" alt="animated gifs" width="300"/>
-<img src="https://raw.githubusercontent.com/elvanaud/GameBoy_Emulator/master/marioland.gif" alt="animated gifs" width="300"/>
-<img src="https://raw.githubusercontent.com/elvanaud/GameBoy_Emulator/master/sokoban.gif" alt="animated gifs" width="300"/>
+
+|||
+|---|---|
+| <img src="https://raw.githubusercontent.com/elvanaud/GameBoy_Emulator/master/donkeykong3.gif" alt="animated gifs" width="300"/> | <img src="https://raw.githubusercontent.com/elvanaud/GameBoy_Emulator/master/drmario2.gif" alt="animated gifs" width="300"/> |
+| <img src="https://raw.githubusercontent.com/elvanaud/GameBoy_Emulator/master/drmario.gif" alt="animated gifs" width="300"/> | <img src="https://raw.githubusercontent.com/elvanaud/GameBoy_Emulator/master/linksawakening.gif" alt="animated gifs" width="300"/> |
+| <img src="https://raw.githubusercontent.com/elvanaud/GameBoy_Emulator/master/marioland.gif" alt="animated gifs" width="300"/> | <img src="https://raw.githubusercontent.com/elvanaud/GameBoy_Emulator/master/sokoban.gif" alt="animated gifs" width="300"/> |
+
 
