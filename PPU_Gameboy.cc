@@ -18,7 +18,7 @@ bool PPU_Gameboy::tick()
 {
     //test();
     bool newFrame = false;
-    if(((lcdc>>7)&1)==0)
+    if(((lcdc>>7)&1)==0) //TODO: manage this properly, and make it cycle accurate
     {
         stat = 0;
         scanline = 0;

@@ -8,6 +8,7 @@
 
 #include <SDL2/SDL.h>
 //#include <SFML/Graphics.hpp>
+#include "MBC.h"
 
 class Z80_Gameboy;
 class PPU_Gameboy;
@@ -31,10 +32,12 @@ private:
     std::string msg = "";
 
     bool stopMode = false;
-    uint8_t ram[0x10000];
+    uint8_t ram[0x10000]; //TODO: allocate less memory as most of it isn't used
     SDL_Renderer *ren;
     SDL_Window *win;
     bool blockMemoryWrite = false;
+
+    MBC * cartridge = nullptr;
 
 public:
     Bus(Z80_Gameboy& c,PPU_Gameboy& p,Timer_Gameboy& t);

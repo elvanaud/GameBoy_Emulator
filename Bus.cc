@@ -8,6 +8,8 @@
 #include <vector>
 #include <map>
 #include <list>
+#include "NoMBC.h"
+#include "MBC1.h"
 
 Bus::Bus(Z80_Gameboy & c, PPU_Gameboy & p,Timer_Gameboy & t)
     :cpu(c),ppu(p),tim(t)
@@ -42,6 +44,8 @@ Bus::Bus(Z80_Gameboy & c, PPU_Gameboy & p,Timer_Gameboy & t)
 
 Bus::~Bus()
 {
+    if(cartridge)
+        delete cartridge;
     SDL_DestroyRenderer(ren);
     SDL_DestroyWindow(win);
     SDL_Quit();
@@ -50,11 +54,27 @@ Bus::~Bus()
 void Bus::loadCartridge(std::string path)
 {
     std::ifstream input(path, std::ios::binary );
-    if(!input) std::cout << "ERREUR: FIchier ROM introuvable\n";
+    if(!input) std::cout << "ERREUR: Fichier ROM introuvable\n";
 
-    input.read((char*)ram,0x8000);
-    std::cout << "Type: " << (int)ram[0x147] << " ROM: " << (int)ram[0x148] << " RAM: " << (int)ram[0x149] << std::endl;
-    std::cout << "Value of 0x40: "<<(int) ram[0x40]<<std::endl;
+    //input.read((char*)ram,0x8000);
+    //std::cout << "Type: " << (int)ram[0x147] << " ROM: " << (int)ram[0x148] << " RAM: " << (int)ram[0x149] << std::endl;
+
+    char romHeader[0x150];
+    input.read(romHeader,0x150);
+    uint8_t romType = romHeader[0x0147];
+    input.seekg(0,std::ios::beg);
+    switch(romType)
+    {
+    case 0:
+        cartridge = new NoMBC(input);
+        break;
+    case 1: case 2: case 3:
+        cartridge = new MBC1(input);
+        break;
+    default:
+        std::cout << "ERROR: MBC Type "<<(int)romType<<" not handled !\n";
+        cartridge = new NoMBC(input); //By default, TODO: stop execution
+    }
 }
 
 void Bus::write(uint16_t adr, uint8_t data)
@@ -62,10 +82,7 @@ void Bus::write(uint16_t adr, uint8_t data)
     if(blockMemoryWrite) return;
     if(adr >= 0x0000 && adr <= 0x7FFF) //ROM
     {
-        //cartridge.write(adr,data);
-        //ram[adr] = data;
-        //std::cout<<"Writing in ROM!: adr:"<<(int)adr<<" , value: "<<(int)data<<std::endl;
-        //if(adr==0x40) std::cout<<"------------------------------------------------------------------------\n";
+        cartridge->write(adr,data);
     }
     else if(adr >= 0x8000 && adr <= 0x9FFF) //VRAM
     {
@@ -73,8 +90,7 @@ void Bus::write(uint16_t adr, uint8_t data)
     }
     else if(adr >= 0xA000 && adr <= 0xBFFF) //ExtRAM
     {
-        //cartridge.write(adr,data);
-        ram[adr] = data;
+        cartridge->write(adr,data);
     }
     else if(adr >= 0xC000 && adr <= 0xDFFF) //WRAM
     {
@@ -148,7 +164,7 @@ uint8_t Bus::read(uint16_t adr)
 {
     if(adr <= 0x7FFF) //ROM
     {
-
+        return cartridge->read(adr);
     }
     else if(adr >= 0x8000 && adr <= 0x9FFF) //VRAM
     {
@@ -157,7 +173,7 @@ uint8_t Bus::read(uint16_t adr)
     }
     else if(adr >= 0xA000 && adr <= 0xBFFF) //ExtRAM
     {
-
+        return cartridge->read(adr);
     }
     else if(adr >= 0xC000 && adr <= 0xDFFF) //WRAM
     {
