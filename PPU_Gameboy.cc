@@ -322,7 +322,7 @@ void PPU_Gameboy::write(uint16_t adr, uint8_t data)
         dma_starting_adress = data;
         DMA_Transfer(); break;
     case 0xFF47:
-        std::cout << "WRITE TO BG PALETTE\n";
+        //std::cout << "WRITE TO BG PALETTE\n";
         bgp = data; break;
     case 0xFF48:
         obp0 = data; break;

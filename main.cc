@@ -32,7 +32,7 @@ int main(int argc, char **argv)
     //gb.loadCartridge("ROMS/03-modify_timing.gb");
 
 
-    gb.loadCartridge("ROMS/Tetris.GB");
+    //gb.loadCartridge("ROMS/Tetris.GB");
     //gb.loadCartridge("ROMS/DRMARIO.GB");
     //gb.loadCartridge("ROMS/opus5.gb");
     //gb.loadCartridge("ROMS/lyc.gb");
@@ -42,12 +42,13 @@ int main(int argc, char **argv)
 
     //All MBC1:
     //gb.loadCartridge("ROMS/warioland.gb");
-    //gb.loadCartridge("ROMS/LinksAwakening.gb");
+    gb.loadCartridge("ROMS/LinksAwakening.gb");
     //gb.loadCartridge("ROMS/Donkey Kong Land (USA, Europe).gb");
     //gb.loadCartridge("ROMS/Super Mario Land (Patch FR).gb");
     //gb.loadCartridge("ROMS/Space Invaders (PD).gb");
     //gb.loadCartridge("ROMS/Mystical Ninja (U) [S][b1].gb");
     //gb.loadCartridge("ROMS/Kirby's Dream Land (UE) [b1].gb");
+    //gb.loadCartridge("ROMS/PAC-MAN/PAC-MAN.GB");
     //gb.loadCartridge("ROMS/Kirby's Dream Land 2 (U) [S][!].gb");
 
 
