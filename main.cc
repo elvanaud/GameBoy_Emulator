@@ -36,13 +36,13 @@ int main(int argc, char **argv)
     //gb.loadCartridge("ROMS/DRMARIO.GB");
     //gb.loadCartridge("ROMS/opus5.gb");
     //gb.loadCartridge("ROMS/lyc.gb");
-    //gb.loadCartridge("ROMS/bpong.gb");
+    gb.loadCartridge("ROMS/bpong.gb");
     //gb.loadCartridge("ROMS/Soukoban (J).gb");
 
 
     //All MBC1:
     //gb.loadCartridge("ROMS/warioland.gb");
-    gb.loadCartridge("ROMS/LinksAwakening.gb");
+    //gb.loadCartridge("ROMS/LinksAwakening.gb");
     //gb.loadCartridge("ROMS/Donkey Kong Land (USA, Europe).gb");
     //gb.loadCartridge("ROMS/Super Mario Land (Patch FR).gb");
     //gb.loadCartridge("ROMS/Space Invaders (PD).gb");
