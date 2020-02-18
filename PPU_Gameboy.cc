@@ -188,7 +188,8 @@ void PPU_Gameboy::generatePixel(uint8_t y, uint8_t x)
         {
             tileXOffset = 0;
             tileX++;
-            tileX &= 0x3F; //Modulo for scrolling
+            //tileX%=32;
+            tileX &= 0x1F; //Modulo for scrolling
             ComputeTileLine();
         }
 
@@ -308,7 +309,7 @@ void PPU_Gameboy::write(uint16_t adr, uint8_t data)
     case 0xFF40:
         lcdc = data; //std::cout<<"lcdc:"<<(int)lcdc<<"|"<<((lcdc>>7)&1)<<std::endl;break;
     case 0xFF41:
-        stat = data; break;
+        stat = data&0b0111'1000; break;
     case 0xFF42:
         scy = data; break;
     case 0xFF43:

@@ -59,7 +59,7 @@ void Bus::loadCartridge(std::string path)
     char romHeader[0x150];
     input.read(romHeader,0x150);
     uint8_t romType = romHeader[0x0147];
-    std::cout << "Type: " << (int)romType << " ROM: " << (int)romHeader[0x148] << " RAM: " << (int)romHeader[0x149] << std::endl;
+    std::cout << "Type: " << (int)romType << " ROM: " << (int)romHeader[0x148] << " RAM: " << (int)romHeader[0x149] << "CGB:"<<(int)romHeader[0x143]<< std::endl;
     input.seekg(0,std::ios::beg);
     switch(romType)
     {
