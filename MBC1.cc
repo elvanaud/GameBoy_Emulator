@@ -42,6 +42,7 @@ uint8_t MBC1::read(uint16_t adr)
         }
         return extRam[ramIndex];
     }
+    return 0x00; //Should never reach here
 }
 
 void MBC1::write(uint16_t adr, uint8_t data)

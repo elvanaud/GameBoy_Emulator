@@ -259,7 +259,7 @@ std::string csvGet(std::string src,std::string field)
 {
     auto parts = split(src,'\n');
     int pos =0; int p = 0;
-    for(f : split(parts[0],';'))
+    for(auto f : split(parts[0],';'))
     {
         if(f==field)
             pos = p;
@@ -484,7 +484,7 @@ void Bus::run()
                         if(fixedDumpEnabled == fixedDump.size())
                             fixedDump.pop_front();
                     }
-                    //if(nbInst >= 0x3e0000) over = true;
+                    //if(nbInst >= 0xf000) over = true;
                     /*if(ram[0x40] == 0x2F)
                     {
                         std::cout << "wtf ------"<<nbInst<<"----------\n";
@@ -509,7 +509,7 @@ void Bus::run()
                 {
                     std::cout << cpu.trace() << std::endl<<cpu.instDump()<<std::endl;
                     std::cout << "--------------------------------------" << std::endl;
-                    for(a : watchAdr)
+                    for(auto a : watchAdr)
                     {
                         std::cout << std::hex << std::showbase << a << ": " << (int)read(a) << std::endl;
                     }
@@ -539,7 +539,7 @@ void Bus::run()
                     std::cout << "Serial Cable Char:"<<(int)sb<<" ("<<(char)sb<<")"<<std::endl;
                     sb = sc = 0;
                 }
-                SDL_Delay(0.001);
+                //SDL_Delay(0.001);
 
             }
             newFrame = ppu.tick();

@@ -13,107 +13,107 @@ Z80_Gameboy::Z80_Gameboy()
 
     std::vector<std::pair<uint8_t,std::function<void(Z80_Gameboy*)>>> oldInsts[MASK_TYPE_NB];
     oldInsts[0] = {
-        {0b00'110'110,&LD_iHL_N},
-        {0b00'001'010,&LD_A_iBC},
-        {0b00'011'010,&LD_A_iDE},
-        {0b11'110'010,&LDH_A_iC},
-        {0b11'100'010,&LDH_iC_A},
-        {0b11'110'000,&LDH_A_iN},
-        {0b11'100'000,&LDH_iN_A},
-        {0b11'111'010,&LD_A_iNN},
-        {0b11'101'010,&LD_iNN_A},
-        {0b00'101'010,&LDI_A_iHL},
-        {0b00'111'010,&LDD_A_iHL},
-        {0b00'000'010,&LD_iBC_A},
-        {0b00'010'010,&LD_iDE_A},
-        {0b00'100'010,&LDI_iHL_A},
-        {0b00'110'010,&LDD_iHL_A},
-        {0b11'111'001,&LD_SP_HL},
-        {0b11'111'000,&LDHL_SP_E},
-        {0b00'001'000,&LD_iNN_SP},
-        {0b11'000'110,&ADD_A_N},
-        {0b10'000'110,&ADD_A_iHL},
-        {0b11'001'110,&ADC_A_N},
-        {0b10'001'110,&ADC_A_iHL},
-        {0b11'010'110,&SUB_N},
-        {0b10'010'110,&SUB_iHL},
-        {0b11'011'110,&SBC_A_N},
-        {0b10'011'110,&SBC_A_iHL},
-        {0b11'100'110,&AND_N},
-        {0b10'100'110,&AND_iHL},
-        {0b11'110'110,&OR_N},
-        {0b10'110'110,&OR_iHL},
-        {0b11'101'110,&XOR_N},
-        {0b10'101'110,&XOR_iHL},
-        {0b11'111'110,&CP_N},
-        {0b10'111'110,&CP_iHL},
-        {0b00'110'100,&INC_iHL},
-        {0b00'110'101,&DEC_iHL},
-        {0b11'101'000,&ADD_SP_E},
-        {0b00'000'111,&RLCA},
-        {0b00'010'111,&RLA},
-        {0b00'001'111,&RRCA},
-        {0b00'011'111,&RRA},
-        {0b11'001'011,&META_ROTATE},
-        {0b11'000'011,&JP_NN},
-        {0b00'011'000,&JR_E},
-        {0b11'101'001,&JP_iHL},
-        {0b11'001'101,&CALL_NN},
-        {0b11'001'001,&RET},
-        {0b11'011'001,&RETI},
-        {0b00'100'111,&DAA},
-        {0b00'101'111,&CPL},
-        {0b00'000'000,&NOP},
-        {0b00'111'111,&CCF},
-        {0b00'110'111,&SCF},
-        {0b11'110'011,&DI},
-        {0b11'111'011,&EI},
-        {0b01'110'110,&HALT}, //TODO
-        {0b00'010'000,&STOP} //TODO (and careful opcode)
+        {0b00'110'110,&Z80_Gameboy::LD_iHL_N},
+        {0b00'001'010,&Z80_Gameboy::LD_A_iBC},
+        {0b00'011'010,&Z80_Gameboy::LD_A_iDE},
+        {0b11'110'010,&Z80_Gameboy::LDH_A_iC},
+        {0b11'100'010,&Z80_Gameboy::LDH_iC_A},
+        {0b11'110'000,&Z80_Gameboy::LDH_A_iN},
+        {0b11'100'000,&Z80_Gameboy::LDH_iN_A},
+        {0b11'111'010,&Z80_Gameboy::LD_A_iNN},
+        {0b11'101'010,&Z80_Gameboy::LD_iNN_A},
+        {0b00'101'010,&Z80_Gameboy::LDI_A_iHL},
+        {0b00'111'010,&Z80_Gameboy::LDD_A_iHL},
+        {0b00'000'010,&Z80_Gameboy::LD_iBC_A},
+        {0b00'010'010,&Z80_Gameboy::LD_iDE_A},
+        {0b00'100'010,&Z80_Gameboy::LDI_iHL_A},
+        {0b00'110'010,&Z80_Gameboy::LDD_iHL_A},
+        {0b11'111'001,&Z80_Gameboy::LD_SP_HL},
+        {0b11'111'000,&Z80_Gameboy::LDHL_SP_E},
+        {0b00'001'000,&Z80_Gameboy::LD_iNN_SP},
+        {0b11'000'110,&Z80_Gameboy::ADD_A_N},
+        {0b10'000'110,&Z80_Gameboy::ADD_A_iHL},
+        {0b11'001'110,&Z80_Gameboy::ADC_A_N},
+        {0b10'001'110,&Z80_Gameboy::ADC_A_iHL},
+        {0b11'010'110,&Z80_Gameboy::SUB_N},
+        {0b10'010'110,&Z80_Gameboy::SUB_iHL},
+        {0b11'011'110,&Z80_Gameboy::SBC_A_N},
+        {0b10'011'110,&Z80_Gameboy::SBC_A_iHL},
+        {0b11'100'110,&Z80_Gameboy::AND_N},
+        {0b10'100'110,&Z80_Gameboy::AND_iHL},
+        {0b11'110'110,&Z80_Gameboy::OR_N},
+        {0b10'110'110,&Z80_Gameboy::OR_iHL},
+        {0b11'101'110,&Z80_Gameboy::XOR_N},
+        {0b10'101'110,&Z80_Gameboy::XOR_iHL},
+        {0b11'111'110,&Z80_Gameboy::CP_N},
+        {0b10'111'110,&Z80_Gameboy::CP_iHL},
+        {0b00'110'100,&Z80_Gameboy::INC_iHL},
+        {0b00'110'101,&Z80_Gameboy::DEC_iHL},
+        {0b11'101'000,&Z80_Gameboy::ADD_SP_E},
+        {0b00'000'111,&Z80_Gameboy::RLCA},
+        {0b00'010'111,&Z80_Gameboy::RLA},
+        {0b00'001'111,&Z80_Gameboy::RRCA},
+        {0b00'011'111,&Z80_Gameboy::RRA},
+        {0b11'001'011,&Z80_Gameboy::META_ROTATE},
+        {0b11'000'011,&Z80_Gameboy::JP_NN},
+        {0b00'011'000,&Z80_Gameboy::JR_E},
+        {0b11'101'001,&Z80_Gameboy::JP_iHL},
+        {0b11'001'101,&Z80_Gameboy::CALL_NN},
+        {0b11'001'001,&Z80_Gameboy::RET},
+        {0b11'011'001,&Z80_Gameboy::RETI},
+        {0b00'100'111,&Z80_Gameboy::DAA},
+        {0b00'101'111,&Z80_Gameboy::CPL},
+        {0b00'000'000,&Z80_Gameboy::NOP},
+        {0b00'111'111,&Z80_Gameboy::CCF},
+        {0b00'110'111,&Z80_Gameboy::SCF},
+        {0b11'110'011,&Z80_Gameboy::DI},
+        {0b11'111'011,&Z80_Gameboy::EI},
+        {0b01'110'110,&Z80_Gameboy::HALT}, //TODO
+        {0b00'010'000,&Z80_Gameboy::STOP} //TODO (and careful opcode)
     };
 
     oldInsts[1] = {
-        {0b00'000'001,&LD_DD_NN},
-        {0b11'000'101,&PUSH_QQ},
-        {0b11'000'001,&POP_QQ},
-        {0b00'001'001,&ADD_HL_SS},
-        {0b00'000'011,&INC_SS},
-        {0b00'001'011,&DEC_SS}
+        {0b00'000'001,&Z80_Gameboy::LD_DD_NN},
+        {0b11'000'101,&Z80_Gameboy::PUSH_QQ},
+        {0b11'000'001,&Z80_Gameboy::POP_QQ},
+        {0b00'001'001,&Z80_Gameboy::ADD_HL_SS},
+        {0b00'000'011,&Z80_Gameboy::INC_SS},
+        {0b00'001'011,&Z80_Gameboy::DEC_SS}
     };
 
     oldInsts[2] = {
-        {0b01'110'000,&LD_iHL_R},
-        {0b10'000'000,&ADD_A_R},
-        {0b10'001'000,&ADC_A_R},
-        {0b10'010'000,&SUB_R},
-        {0b10'011'000,&SBC_A_R},
-        {0b10'100'000,&AND_R},
-        {0b10'110'000,&OR_R},
-        {0b10'101'000,&XOR_R},
-        {0b10'111'000,&CP_R}
+        {0b01'110'000,&Z80_Gameboy::LD_iHL_R},
+        {0b10'000'000,&Z80_Gameboy::ADD_A_R},
+        {0b10'001'000,&Z80_Gameboy::ADC_A_R},
+        {0b10'010'000,&Z80_Gameboy::SUB_R},
+        {0b10'011'000,&Z80_Gameboy::SBC_A_R},
+        {0b10'100'000,&Z80_Gameboy::AND_R},
+        {0b10'110'000,&Z80_Gameboy::OR_R},
+        {0b10'101'000,&Z80_Gameboy::XOR_R},
+        {0b10'111'000,&Z80_Gameboy::CP_R}
     };
 
     oldInsts[3] = {
-        {0b00'000'110,&LD_R_N},
-        {0b01'000'110,&LD_R_iHL},
-        {0b00'000'100,&INC_R},
-        {0b00'000'101,&DEC_R},
-        {0b11'000'010,&JP_CC_NN},
-        {0b00'000'000,&JR_CC_E},
-        {0b11'000'100,&CALL_CC_NN},
-        {0b11'000'000,&RET_CC},
-        {0b11'000'111,&RST_T}
+        {0b00'000'110,&Z80_Gameboy::LD_R_N},
+        {0b01'000'110,&Z80_Gameboy::LD_R_iHL},
+        {0b00'000'100,&Z80_Gameboy::INC_R},
+        {0b00'000'101,&Z80_Gameboy::DEC_R},
+        {0b11'000'010,&Z80_Gameboy::JP_CC_NN},
+        {0b00'000'000,&Z80_Gameboy::JR_CC_E},
+        {0b11'000'100,&Z80_Gameboy::CALL_CC_NN},
+        {0b11'000'000,&Z80_Gameboy::RET_CC},
+        {0b11'000'111,&Z80_Gameboy::RST_T}
     };
 
     oldInsts[4] = {
-        {0b01'000'000,&LD_R_Rp}
+        {0b01'000'000,&Z80_Gameboy::LD_R_Rp}
     };
 
     for(int i = 0; i < MASK_TYPE_NB; i++) //For type 4 could use try catch
     {
         for(int j = 0; j < 256; j++)
         {
-            instructions[i][j] = std::function<void(Z80_Gameboy*)>(&not_found_inst);
+            instructions[i][j] = std::function<void(Z80_Gameboy*)>(&Z80_Gameboy::not_found_inst);
         }
         for(auto inst : oldInsts[i])
         {

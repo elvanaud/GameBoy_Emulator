@@ -28,6 +28,7 @@ uint8_t NoMBC::read(uint16_t adr)
         }
         return extRam[adr-0xA000];
     }
+    return 0x00; //Should never reach here
 }
 
 void NoMBC::write(uint16_t adr, uint8_t data)
