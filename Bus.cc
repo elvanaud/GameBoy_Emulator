@@ -273,9 +273,9 @@ std::string csvGet(std::string src,std::string field)
 void Bus::run()
 {
     uint8_t cpt = 4;
-    bool stepping = true;
+    bool stepping = false;
     bool step = true;
-    bool debug = stepping;
+    bool debug = false;
     uint8_t instcycles = 0;
     std::vector<uint16_t> watchAdr;
     bool breakpointEnable = false;
@@ -300,10 +300,7 @@ void Bus::run()
     unsigned int preTick = 0, postTick = 0, durationTick; //Utiliser pour le caping framerate
 
     while (!over)
-
-    
     {
-
         //nbCycles++;
         if(newFrame && !debug) //TODO: change the condition to also check this when screen is disabled
         {
@@ -346,8 +343,6 @@ void Bus::run()
         {
 
             while(SDL_PollEvent(&e)) //Debug events
-            
-             
 
             {
                 if(e.type == SDL_QUIT)
@@ -469,12 +464,6 @@ void Bus::run()
 
         if(!stopMode && (!stepping||instcycles!=0||step))
         {
-            if(newFrame){
-                preTick = SDL_GetTicks();
-            }
-            
-
-
             if(cpt == 4)
             {
                 cpt = 0;
@@ -557,9 +546,6 @@ void Bus::run()
                     std::cout << "Serial Cable Char:"<<(int)sb<<" ("<<(char)sb<<")"<<std::endl;
                     sb = sc = 0;
                 }
-        
-
-
             }
             newFrame = ppu.tick();
             tim.tick();
@@ -573,6 +559,7 @@ void Bus::run()
                 if(durationTick < SCREEN_TICKS_PER_FRAME){
                     SDL_Delay(SCREEN_TICKS_PER_FRAME - durationTick); //Regulation
                 }
+                preTick = postTick;
             }
                       
                 
@@ -585,10 +572,6 @@ void Bus::run()
             debug = true;
             //over = true; //todo: trigger on interupt from p10-...
         }
-        
-        
-          
-               
     }
     clock_t endTime = clock();
     double duration = ((double)(endTime-startTime)) / CLOCKS_PER_SEC;
