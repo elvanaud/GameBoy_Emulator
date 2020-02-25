@@ -56,7 +56,10 @@ Bus::~Bus()
 void Bus::loadCartridge(std::string path)
 {
     std::ifstream input(path, std::ios::binary );
-    if(!input) std::cout << "ERREUR: Fichier ROM introuvable\n";
+    if(!input){
+         std::cout << "ERREUR: Fichier ROM introuvable\n";
+         exit(-1);
+     }
 
     char romHeader[0x150];
     input.read(romHeader,0x150);
