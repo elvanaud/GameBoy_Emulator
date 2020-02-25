@@ -10,6 +10,8 @@
 #include <list>
 #include "NoMBC.h"
 #include "MBC1.h"
+const int SCREEN_FPS = 60;
+const int SCREEN_TICKS_PER_FRAME = 1000 / SCREEN_FPS;
 
 Bus::Bus(Z80_Gameboy & c, PPU_Gameboy & p,Timer_Gameboy & t)
     :cpu(c),ppu(p),tim(t)
@@ -294,12 +296,18 @@ void Bus::run()
     int fixedDumpEnabled = 0;
     std::list<std::string> fixedDump;
     bool  dump_membp = false;
+    
+    unsigned int preTick = 0, postTick = 0, durationTick; //Utiliser pour le caping framerate
 
     while (!over)
+
+    
     {
+
         //nbCycles++;
         if(newFrame && !debug) //TODO: change the condition to also check this when screen is disabled
         {
+
             while (SDL_PollEvent(&e))
             {
                 if (e.type == SDL_QUIT)
@@ -336,7 +344,11 @@ void Bus::run()
         }
         else if(debug || stepping) //TODO: verify all that behavior
         {
+
             while(SDL_PollEvent(&e)) //Debug events
+            
+             
+
             {
                 if(e.type == SDL_QUIT)
                 {
@@ -457,6 +469,12 @@ void Bus::run()
 
         if(!stopMode && (!stepping||instcycles!=0||step))
         {
+            if(newFrame){
+                preTick = SDL_GetTicks();
+            }
+            
+
+
             if(cpt == 4)
             {
                 cpt = 0;
@@ -539,12 +557,25 @@ void Bus::run()
                     std::cout << "Serial Cable Char:"<<(int)sb<<" ("<<(char)sb<<")"<<std::endl;
                     sb = sc = 0;
                 }
-                //SDL_Delay(0.001);
+        
+
 
             }
             newFrame = ppu.tick();
             tim.tick();
             cpt++;
+            
+            
+            //CAPING FRAME RATE
+            if(newFrame){
+                postTick = SDL_GetTicks();
+                durationTick = postTick - preTick;
+                if(durationTick < SCREEN_TICKS_PER_FRAME){
+                    SDL_Delay(SCREEN_TICKS_PER_FRAME - durationTick); //Regulation
+                }
+            }
+                      
+                
         }
         if(stopMode)
         {
@@ -554,6 +585,10 @@ void Bus::run()
             debug = true;
             //over = true; //todo: trigger on interupt from p10-...
         }
+        
+        
+          
+               
     }
     clock_t endTime = clock();
     double duration = ((double)(endTime-startTime)) / CLOCKS_PER_SEC;
