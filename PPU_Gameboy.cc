@@ -99,6 +99,15 @@ bool PPU_Gameboy::tick()
                                     spriteIndex = 7 - spriteIndex;
                                 }
                                 screenLine[spriteXDot] = ((sprite >> (15-spriteIndex))&1) | (((sprite >> (7-spriteIndex))<<1)&2);
+                                uint8_t palette = obp0;
+                                if((oamLine[i][3] >> 4)&1 == 1)
+                                	palette = obp1;
+                                if(screenLine[spriteXDot] == 0)
+                                	screenLine[spriteXDot] = 4;
+                                else
+                                {
+                                	screenLine[spriteXDot] = (palette>>(screenLine[spriteXDot]*2))&3;
+                                }
                             }
                         }
                     }
