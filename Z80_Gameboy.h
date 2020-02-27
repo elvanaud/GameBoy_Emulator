@@ -1263,6 +1263,10 @@ private:
         cycles = 1; inst_length = 1;
         Gen_Assembly("JP (HL)");
         //pc = read(GetRegPair(Registers_Pairs::HL))-inst_length;
+        if(GetRegPair(Registers_Pairs::HL)==0xffff)
+        {
+            std::cout <<" ALERTE"<<std::endl;
+        }
         pc = GetRegPair(Registers_Pairs::HL)-inst_length;
     }
 

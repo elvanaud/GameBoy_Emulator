@@ -35,7 +35,7 @@ uint8_t MBC1::read(uint16_t adr)
         if(bankMode == 1)
             ramBank = bankNumUpper;
         int ramIndex = ramBank * 0x2000 + (adr-0xA000);
-        if(ramIndex >= ramSize || (ramBank == 0 && adr >= 0xA000+ramSize)) //bound checking
+        if((ramIndex >= ramSize) || ((ramBank == 0) && (adr >= (0xA000+ramSize)))) //bound checking
         {
             std::cout << "ERROR: Accessing Non Existent External RAM (R) \n";
             return 0;
@@ -54,7 +54,7 @@ void MBC1::write(uint16_t adr, uint8_t data)
         if(bankMode == 1)
             ramBank = bankNumUpper;
         int ramIndex = ramBank * 0x2000 + (adr-0xA000);
-        if(ramIndex >= ramSize || (ramBank == 0 && adr >= 0xA000+ramSize)) //bound checking
+        if((ramIndex >= ramSize) || ((ramBank == 0) && (adr >= (0xA000+ramSize)))) //bound checking
         {
             std::cout << "ERROR: Accessing Non Existent External RAM (W) \n";
             return;
@@ -68,7 +68,7 @@ void MBC1::write(uint16_t adr, uint8_t data)
         switch(adrRange)
         {
         case 0:
-            if(data & 0b0000'1111 == 0x0A)
+            if((data & 0b0000'1111) == 0x0A)
                 ramEnable = true;
             else
                 ramEnable = false;
