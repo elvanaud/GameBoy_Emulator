@@ -6,6 +6,7 @@ trace.log
 obj/
 *.log
 ROMS/
+ROMS.zip
 
 
 
