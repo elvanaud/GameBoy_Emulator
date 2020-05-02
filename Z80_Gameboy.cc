@@ -237,6 +237,11 @@ uint8_t Z80_Gameboy::tick()
             if(priv_pc >= 0x8000)
                 disassembleOver = true;
         }
+        if(regBPEnabled && GetRegPair(Registers_Pairs::SP,false) < 0xDF00)
+        {
+            std::cout << "SP Breakpoint triggered ! Previous PC: "<<fromPC<<" Assembled line: "<<assembled_line<<std::endl;
+            bus->triggerDebugMode(true);
+        }
     }
 
     cycles--;

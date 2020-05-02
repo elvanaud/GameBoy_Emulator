@@ -170,6 +170,12 @@ public:
     bool disassembleAdr = false;
 //private:
     std::string assembled_line;
+
+    void enableRegBP(bool enable)
+    {
+        regBPEnabled = enable;
+    }
+
 private:
     uint16_t priv_pc = 0x100;
     std::string Gen_Value(uint8_t val,bool indirect=false,bool signedval = false)
@@ -238,6 +244,7 @@ private:
     }
 private:
     void triggerHaltMode(bool halt);
+    bool regBPEnabled = false;
 
     uint8_t Manage_Interupts()
     {
@@ -1236,20 +1243,20 @@ private:
     void JR_E()
     {
         cycles = 3; inst_length = 2;
-        uint8_t e = read(pc+1)+inst_length;
+        uint8_t e = read(pc+1);//+inst_length;
         Gen_Assembly("JR",Gen_Value(e,false,true));
-        pc = (pc+(int8_t)e)-inst_length;
+        pc = (pc+(int8_t)e);//-inst_length;
     }
 
     void JR_CC_E()
     {
         cycles = 3; inst_length = 2;
-        uint8_t cc = GetOpcodeMiddle()&0b011; uint8_t e = read(pc+1)+2;
+        uint8_t cc = GetOpcodeMiddle()&0b011; uint8_t e = read(pc+1);//+2;
         Gen_Assembly("JR",Gen_Condition(cc),Gen_Value(e,false,true));
         if(((cc == 0) && (flags>>7)==0) || ((cc == 1) && (flags>>7)==1)
             || ((cc == 2) && ((flags>>4)&1)==0) || ((cc == 3) && ((flags>>4)&1)==1))
         {
-            pc = pc + ((int8_t)e) - inst_length;
+            pc = pc + ((int8_t)e);// - inst_length;
         }
         else
         {

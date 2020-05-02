@@ -39,6 +39,9 @@ private:
 
     MBC * cartridge = nullptr;
 
+    bool stepping = false;
+    bool debug = false;
+
 public:
     Bus(Z80_Gameboy& c,PPU_Gameboy& p,Timer_Gameboy& t);
     ~Bus();
@@ -49,6 +52,8 @@ public:
     uint8_t read(uint16_t adr);
 
     void triggerStopMode(bool stop);
+
+    void triggerDebugMode(bool debugMode);
 
     void run();
     std::string showMemory(uint16_t src,uint16_t dst)

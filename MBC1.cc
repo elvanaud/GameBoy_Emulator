@@ -1,4 +1,5 @@
 #include "MBC1.h"
+#include "Bus.h"
 
 MBC1::MBC1(std::ifstream & in) : MBC(in)
 {
@@ -26,7 +27,19 @@ uint8_t MBC1::read(uint16_t adr)
         if(adr <= 0x3FFF)
             return romBank0[adr];
         else
-            return romBanks[currentBank*0x4000 + (adr-0x4000)];
+        {
+            int index = currentBank*0x4000 + (adr-0x4000);
+            if(index >= romSize)
+            {
+                std::cout << "ERROR - Reading outside of ROM: Rombank number: " << currentBank<<" adress: "<<adr<<std::endl;
+                bus->triggerDebugMode(true);
+                return 0;
+                //currentBank &= 0b00'111'111;
+                //index = currentBank*0x4000 + (adr-0x4000);
+            }
+            return romBanks[index];
+        }
+
     }
     else if(adr >= 0xA000 && adr <= 0xBFFF) //ExtRAM
     {

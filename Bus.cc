@@ -78,6 +78,7 @@ void Bus::loadCartridge(std::string path)
         std::cout << "ERROR: MBC Type "<<(int)romType<<" not handled !\n";
         cartridge = new NoMBC(input); //By default, TODO: stop execution
     }
+    cartridge->attachBus(this);
 }
 
 void Bus::write(uint16_t adr, uint8_t data)
@@ -273,12 +274,17 @@ std::string csvGet(std::string src,std::string field)
     return split(parts[1],';')[pos];
 }
 
+void Bus::triggerDebugMode(bool debugMode)
+{
+    debug = stepping = debugMode;
+}
+
 void Bus::run()
 {
     uint8_t cpt = 4;
-    bool stepping = false;
+    //bool stepping = false;
     bool step = true;
-    bool debug = false;
+    //bool debug = false;
     uint8_t instcycles = 0;
     std::vector<uint16_t> watchAdr;
     bool breakpointEnable = false;
@@ -299,7 +305,7 @@ void Bus::run()
     int fixedDumpEnabled = 0;
     std::list<std::string> fixedDump;
     bool  dump_membp = false;
-    
+
     unsigned int preTick = 0, postTick = 0, durationTick; //Utiliser pour le caping framerate
 
     while (!over)
@@ -460,6 +466,13 @@ void Bus::run()
                                 }
                             }
                         }
+                        else if(command[0] == "reg")
+                        {
+                            if(command[1] == "enable")
+                                cpu.enableRegBP(true);
+                            else
+                                cpu.enableRegBP(false);
+                        }
                     }
                 }
             }
@@ -512,9 +525,9 @@ void Bus::run()
 
                 step = false;
                 if(breakpointEnable&&instcycles==0&&cpu.getPC() == breakpoint)
-                    {stepping = true; std::cout << "Breakpoint hit !\n";}
+                    {triggerDebugMode(true); std::cout << "Breakpoint hit !\n";}
                 if(memoryBreakPointEnable&&instcycles==0 && read(memBpAdr)==memBpVal)
-                    {stepping = true; std::cout << "Memory Breakpoint hit !\n";}
+                    {triggerDebugMode(true); std::cout << "Memory Breakpoint hit !\n";}
                 if(debug&&instcycles==0)
                 {
                     std::cout << cpu.trace() << std::endl<<cpu.instDump()<<std::endl;
@@ -553,8 +566,8 @@ void Bus::run()
             newFrame = ppu.tick();
             tim.tick();
             cpt++;
-            
-            
+
+
             //CAPING FRAME RATE
             if(newFrame){
                 std::cout<<"newframe"<<std::endl;
@@ -565,8 +578,8 @@ void Bus::run()
                 }
                 preTick = postTick;
             }
-                      
-                
+
+
         }
         if(stopMode)
         {

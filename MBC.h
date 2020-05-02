@@ -6,6 +6,8 @@
 #include <array>
 #include <iostream>
 
+class Bus;
+
 class MBC
 {
 public:
@@ -18,6 +20,11 @@ public:
         ramSize = std::array<int,6>{0x0,0x800,0x2000,0x8000,0x20'000,0x10'000}[ramSizeHeader];
         romSize = 0x8000 << romSizeHeader;
         extRam = new uint8_t[ramSize];
+    }
+
+    void attachBus(Bus * b)
+    {
+        bus = b;
     }
     virtual ~MBC()
     {
@@ -36,6 +43,7 @@ protected:
     int romSize;
     uint8_t romBank0[0x4000];
     uint8_t * extRam = nullptr;
+    Bus * bus;
 };
 
 #endif // _MBC_HPP
