@@ -63,7 +63,7 @@ bool PPU_Gameboy::tick()
                         }
                     }
 
-                    memset(screenLine,4,160);
+                    memset(screenLine,8,160); //Bit 3 is 1 when no pixel is drawn
                     for(int i = 0; i < nbSpritesOnLine; i++)
                     {
                         uint8_t spriteY = scanline+16 - oamLine[i][0];
@@ -80,6 +80,13 @@ bool PPU_Gameboy::tick()
                         if((oamLine[i][3]>>6)&1) //Y-flip ( TODO: verify 8*16 mode )
                         {
                             spriteY = 7 - spriteY;
+                            if(y16Mode)
+                            {
+                                uint8_t tmp = !(charCode & 1);
+                                charCode &= (~1);
+                                charCode |= tmp;
+
+                            }
                         }
                         uint16_t sprite = GetTileLineFromCode(charCode,spriteY,true);
                         bool drawAllSprite = false;
@@ -87,7 +94,7 @@ bool PPU_Gameboy::tick()
                         {
                             uint8_t spriteXDot= oamLine[i][1]+j-8; //-8 here for x scrolling
                             if(spriteXDot >= 160) break;
-                            if(!drawAllSprite && screenLine[spriteXDot] == 4)
+                            if(!drawAllSprite && screenLine[spriteXDot] >= 8) //>= 8 means the notDrawn bit is set for that pixel
                             {
                                 drawAllSprite = true;
                             }
@@ -98,17 +105,11 @@ bool PPU_Gameboy::tick()
                                 {
                                     spriteIndex = 7 - spriteIndex;
                                 }
-                                screenLine[spriteXDot] = ((sprite >> (15-spriteIndex))&1) | (((sprite >> (7-spriteIndex))<<1)&2);
-                                /*uint8_t palette = obp0;
-                                if((oamLine[i][3] >> 4)&1 == 1)
-                                	palette = obp1;
-                               	if(screenLine[spriteXDot] == 0)
-                                	screenLine[spriteXDot] = 4;
-                                else
-                                {
-                                	screenLine[spriteXDot] = (palette>>(screenLine[spriteXDot]*2))&3;
-                                }*/ //DOESN'T WORK TODO FIX IT
-
+                                uint8_t pixel = (((sprite >> (15-spriteIndex))<<1)&2) | ((sprite >> (7-spriteIndex))&1); //Extra careful with the bit order
+                                if(pixel == 0) continue;
+                                screenLine[spriteXDot] = pixel;
+                                if((oamLine[i][3] >> 4)&1 == 1)//OAM can't be accessed during scanline however palette can (some game rely on this although they are rare)
+                                    screenLine[spriteXDot] |= (1<<2); //We set bit 2 to 1 to indicate obp1
                             }
                         }
                     }
@@ -187,8 +188,8 @@ bool PPU_Gameboy::tick()
 void PPU_Gameboy::generatePixel(uint8_t y, uint8_t x)
 {
     uint8_t pixelData = 0;
-    //uint8_t palette = 0; //DEFAULT PALETTE: pixelData=0 => blank screen
-    uint8_t palette = obp0;
+    uint8_t palette = bgp;
+
     if(lcdc & 1) //Draw the background if enabled
     {
         pixelData = (lower_tile >> 7) | ((higher_tile >> 6)&2);
@@ -208,11 +209,13 @@ void PPU_Gameboy::generatePixel(uint8_t y, uint8_t x)
     }
     if(lcdc & 2) //Display Sprites
     {
-        if(screenLine[x] != 4)
+        if(screenLine[x] < 8) //Means that bit3 is unset which means we draw the pixel
         {
-            //std::cout << (int) screenLine[x] << std::endl;
-            pixelData = screenLine[x];
-            //palette = //BIG PROBLEM: TODO: encode palette info in upper bits
+            //std::cout << (int) screenLine[x] << std::endl; //BIG PROBLEM: TODO: encode palette info in upper bits
+            pixelData = screenLine[x] & 3; //Take the lower 2 bits
+            palette = obp0;
+            if((screenLine[x] >> 2)&1)
+                palette = obp1;
         }
     }
     UpdateScreen(pixelData,y,x,palette);
@@ -222,13 +225,19 @@ void PPU_Gameboy::ComputeTileLine()
 {
     uint8_t tileCode = read((tileY*32+tileX) + GetBGMapOffset());
     uint16_t line = GetTileLineFromCode(tileCode,tileYOffset);
-    lower_tile = line>>8;
-    higher_tile = line & 0xFF;
+    higher_tile = line>>8;
+    lower_tile = line & 0xFF;
 }
 
 void PPU_Gameboy::UpdateScreen(uint8_t pixelData,uint8_t y, uint8_t x, uint8_t palette)
 {
-    int colors[4][4] = {{255,255,255,255},{180,180,180,255},{60,60,60,255},{0,0,0,255}};
+    //int colors[4][4] = {{255,255,255,255},{180,180,180,255},{60,60,60,255},{0,0,0,255}}; //Origjnal colors
+    int colors[4][4] = {{239,239,239,255},{160,160,160,255},{90,90,90,255},{16,16,16,255}};
+    //int colors[4][4] = {{239,239,239,255},{90,90,90,255},{160,160,160,255},{16,16,16,255}}; //Super mario land : exact same results as bgb (why ARE THE COLORS REVERSED??)
+    //int colors[4][4] = {{255,255,255,255},{60,60,60,255},{180,180,180,255},{0,0,0,255}};
+    //int colors[4][4] = {{0,0,0,255},{60,60,60,255},{180,180,180,255},{255,255,255,255}};
+    //int colors[4][4] = {{16,16,16,255},{90,90,90,255},{160,160,160,255},{239,239,239,255}};
+    //int colors[4][4] = {{90,90,90,255},{160,160,160,255},{239,239,239,255},{16,16,16,255}};
     uint8_t colorPalette = (palette >> (pixelData*2))&3;
     screen[(y*160+x)*4+0] = colors[colorPalette][0];
     screen[(y*160+x)*4+1] = colors[colorPalette][1];
@@ -333,7 +342,6 @@ void PPU_Gameboy::write(uint16_t adr, uint8_t data)
         dma_starting_adress = data;
         DMA_Transfer(); break;
     case 0xFF47:
-        //std::cout << "WRITE TO BG PALETTE\n";
         bgp = data; break;
     case 0xFF48:
         obp0 = data; break;

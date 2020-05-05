@@ -473,6 +473,10 @@ void Bus::run()
                             else
                                 cpu.enableRegBP(false);
                         }
+                        else if(command[0] == "graph")
+                        {
+                            ppu.debugMode = true;
+                        }
                     }
                 }
             }
@@ -570,7 +574,7 @@ void Bus::run()
 
             //CAPING FRAME RATE
             if(newFrame){
-                std::cout<<"newframe"<<std::endl;
+                //std::cout<<"newframe"<<std::endl;
                 postTick = SDL_GetTicks();
                 durationTick = postTick - preTick;
                 if(durationTick < SCREEN_TICKS_PER_FRAME){

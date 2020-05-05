@@ -63,6 +63,8 @@ public:
 
     void DMA_Transfer();
 
+    bool debugMode = false;
+
     void test()
     {
         uint8_t pic[16] = {

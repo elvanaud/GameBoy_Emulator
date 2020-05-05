@@ -20,6 +20,8 @@ public:
         ramSize = std::array<int,6>{0x0,0x800,0x2000,0x8000,0x20'000,0x10'000}[ramSizeHeader];
         romSize = 0x8000 << romSizeHeader;
         extRam = new uint8_t[ramSize];
+
+        std::cout << "Color flag: " << std::hex<<std::showbase<< (int)romBank0[0x143] << std::endl;
     }
 
     void attachBus(Bus * b)
