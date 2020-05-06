@@ -38,6 +38,7 @@ private:
     bool blockMemoryWrite = false;
 
     MBC * cartridge = nullptr;
+    std::string cartridgePath;
 
     bool stepping = false;
     bool debug = false;

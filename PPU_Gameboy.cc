@@ -38,7 +38,7 @@ bool PPU_Gameboy::tick()
                 {
                     if((stat >> 5)&1)
                         bus->write(0xFF0F,bus->read(0xFF0F)|2);
-                    tileY = (((scy + scanline)) >> 3)%32; //TODO: debug this
+                    tileY = (((scy + scanline)) >> 3)%32;
                     tileYOffset = ((scy + scanline)) & 0x07;
                     tileX = scx >> 3;
                     tileXOffset = scx & 0x07;
@@ -77,7 +77,7 @@ bool PPU_Gameboy::tick()
                                 spriteY -= 8;
                             }
                         }
-                        if((oamLine[i][3]>>6)&1) //Y-flip ( TODO: verify 8*16 mode )
+                        if((oamLine[i][3]>>6)&1) //Y-flip
                         {
                             spriteY = 7 - spriteY;
                             if(y16Mode)
@@ -233,11 +233,6 @@ void PPU_Gameboy::UpdateScreen(uint8_t pixelData,uint8_t y, uint8_t x, uint8_t p
 {
     //int colors[4][4] = {{255,255,255,255},{180,180,180,255},{60,60,60,255},{0,0,0,255}}; //Origjnal colors
     int colors[4][4] = {{239,239,239,255},{160,160,160,255},{90,90,90,255},{16,16,16,255}};
-    //int colors[4][4] = {{239,239,239,255},{90,90,90,255},{160,160,160,255},{16,16,16,255}}; //Super mario land : exact same results as bgb (why ARE THE COLORS REVERSED??)
-    //int colors[4][4] = {{255,255,255,255},{60,60,60,255},{180,180,180,255},{0,0,0,255}};
-    //int colors[4][4] = {{0,0,0,255},{60,60,60,255},{180,180,180,255},{255,255,255,255}};
-    //int colors[4][4] = {{16,16,16,255},{90,90,90,255},{160,160,160,255},{239,239,239,255}};
-    //int colors[4][4] = {{90,90,90,255},{160,160,160,255},{239,239,239,255},{16,16,16,255}};
     uint8_t colorPalette = (palette >> (pixelData*2))&3;
     screen[(y*160+x)*4+0] = colors[colorPalette][0];
     screen[(y*160+x)*4+1] = colors[colorPalette][1];

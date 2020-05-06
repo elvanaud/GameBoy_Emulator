@@ -24,6 +24,16 @@ public:
         std::cout << "Color flag: " << std::hex<<std::showbase<< (int)romBank0[0x143] << std::endl;
     }
 
+    virtual void save(std::string path)
+    {
+        ;//EMPTY
+    }
+
+    virtual void load(std::string path)
+    {
+        ;//EMPTY
+    }
+
     void attachBus(Bus * b)
     {
         bus = b;

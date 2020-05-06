@@ -55,7 +55,8 @@ Bus::~Bus()
 
 void Bus::loadCartridge(std::string path)
 {
-    std::ifstream input(path, std::ios::binary );
+    cartridgePath = path;
+    std::ifstream input(path, std::ios::binary);
     if(!input){
          std::cout << "ERREUR: Fichier ROM introuvable\n";
          exit(-1);
@@ -79,6 +80,9 @@ void Bus::loadCartridge(std::string path)
         cartridge = new NoMBC(input); //By default, TODO: stop execution
     }
     cartridge->attachBus(this);
+    input.close();
+
+    cartridge->load(cartridgePath+".sav");
 }
 
 void Bus::write(uint16_t adr, uint8_t data)
@@ -594,6 +598,8 @@ void Bus::run()
             //over = true; //todo: trigger on interupt from p10-...
         }
     }
+    cartridge->save(cartridgePath+".sav");
+
     clock_t endTime = clock();
     double duration = ((double)(endTime-startTime)) / CLOCKS_PER_SEC;
     std::cout << "\nTime:" << duration << " Nb inst: " << nbInst << " Nb cycles:" << nbCycles << "\n";

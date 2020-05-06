@@ -16,7 +16,7 @@ MBC1::MBC1(std::ifstream & in) : MBC(in)
     currentBank = 0;
     if(romType == 3)
     {
-        std::cout << "Battery ROM\n"; //TODO: implement saving
+        std::cout << "Battery ROM\n";
     }
 }
 
@@ -109,3 +109,23 @@ void MBC1::write(uint16_t adr, uint8_t data)
 
 }
 
+void MBC1::save(std::string path)
+{
+    if(romType == 3) //Battery ROM Type
+    {
+        std::ofstream file(path,std::ios::binary);
+        file.write((char*)extRam, ramSize);
+        file.close();
+    }
+}
+
+void MBC1::load(std::string path)
+{
+    if(romType == 3)
+    {
+        std::ifstream file(path,std::ios::binary);
+        if(!file) return;
+        file.read((char*)extRam,ramSize);
+        file.close();
+    }
+}

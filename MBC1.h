@@ -9,6 +9,8 @@ public:
     MBC1(std::ifstream & input);
     virtual uint8_t read(uint16_t adr);
     virtual void write(uint16_t adr, uint8_t data);
+    virtual void save(std::string path);
+    virtual void load(std::string path);
 private:
     uint8_t *romBanks = nullptr;
     int currentBank = 0;
